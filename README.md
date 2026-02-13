@@ -10,18 +10,84 @@
 
 ## 📖 Descripción
 
+**Espacio Desafíos** es una aplicación web progresiva (PWA) diseñada específicamente para la gestión integral de clínicas terapéuticas y centros de rehabilitación. Esta plataforma permite administrar de manera eficiente todos los aspectos operativos de una clínica que brinda terapias a niños y adolescentes.
+
+### 🎯 Propósito del Sistema
+
+El sistema nace de la necesidad de digitalizar y optimizar la gestión administrativa de clínicas terapéuticas, permitiendo:
+
+- **Centralizar la información** de niños, profesionales y sesiones en un solo lugar
+- **Automatizar el cálculo de liquidaciones** y comisiones para profesionales
+- **Facilitar el seguimiento** de sesiones terapéuticas mensuales
+- **Mejorar la comunicación** entre administración, profesionales y familias
+- **Digitalizar el registro** de obras sociales y datos de contacto
+- **Optimizar el tiempo** de gestión administrativa
+- **Brindar acceso móvil** a profesionales para cargar sesiones desde cualquier lugar
+
+### 👥 Usuarios Objetivo
+
+| Perfil | Necesidades Cubiertas |
+|--------|----------------------|
+| **Administradores** | Gestión completa de profesionales, niños, valores y liquidaciones |
+| **Profesionales Terapeutas** | Registro de sesiones, consulta de niños asignados, facturación personal |
+| **Familias** | (Próximamente) Portal para ver progreso y próximas sesiones |
+
+### 💡 Casos de Uso Principales
+
+1. **Administrador registra un nuevo niño** con sus datos, obra social y asigna un profesional
+2. **Profesional accede desde su celular** y carga las sesiones realizadas durante el mes
+3. **Sistema calcula automáticamente** la facturación y comisión del profesional (25%)
+4. **Administrador genera liquidaciones** mensuales con un solo clic
+5. **Profesional visualiza** su facturación histórica y liquidaciones pendientes
+
+### 🏥 Contexto de Uso
+
+Ideal para:
+- Clínicas de psicomotricidad relacional
+- Centros de estimulación temprana
+- Consultorios de psicopedagogía
+- Centros de fonoaudiología
+- Clínicas de terapia ocupacional
+- Centros de rehabilitación infantil
+- Consultorios multidisciplinarios
+
 **Espacio Desafíos** es una aplicación web progresiva (PWA) diseñada para la gestión integral de clínicas terapéuticas. Permite administrar profesionales, niños/pacientes, sesiones de terapia, facturación y liquidaciones de manera eficiente y moderna.
 
-### ✨ Características Principales
+---
 
-- 🔐 **Autenticación segura** con roles diferenciados
-- 📱 **Diseño responsive** optimizado para móvil y escritorio
-- 🎯 **PWA completa** con soporte offline
-- 📊 **Dashboards interactivos** con estadísticas en tiempo real
-- 💰 **Gestión financiera** con cálculo automático de comisiones
-- 🎨 **Interfaz moderna** con paleta de colores suaves y atractiva
-- ⚡ **Rendimiento optimizado** con Next.js 15
-- 🔒 **Seguridad** con headers de protección y autenticación JWT
+## 📚 Guía Rápida de Uso
+
+### Primeros Pasos
+
+#### 1. Configuración Inicial (Solo Admin)
+```
+1. Iniciar sesión como administrador
+2. Ir a "Valores" y configurar los 4 tipos de valores:
+   - Nomenclatura
+   - Módulos
+   - OSDE
+   - Sesión Individual
+3. Ir a "Profesionales" y agregar los profesionales de la clínica
+4. Ir a "Niños" y registrar los niños asignando profesionales
+```
+
+#### 2. Uso Diario - Profesionales
+```
+1. Iniciar sesión con email y contraseña
+2. Ver "Mis Niños" para consultar datos de pacientes asignados
+3. Ir a "Sesiones" al final del mes
+4. Seleccionar mes y año
+5. Cargar cantidad de sesiones por cada niño
+6. Guardar cambios
+```
+
+#### 3. Proceso Mensual - Administrador
+```
+1. Revisar sesiones cargadas por profesionales
+2. Ir a "Liquidaciones"
+3. Generar liquidación del mes para cada profesional
+4. Marcar como pagada una vez realizada la transferencia
+```
 
 ---
 
@@ -86,13 +152,62 @@ NEXT_PUBLIC_PWA_BACKGROUND_COLOR=#F8F7FF
 
 > ⚠️ **Nota**: Reemplaza los valores de Supabase con tus credenciales reales.
 
-### 4. Ejecutar el Proyecto
+### 4. Configurar Base de Datos en Supabase
+
+#### 4.1 Crear Tablas
+Ejecuta el script SQL ubicado en `database/schema.sql` en el SQL Editor de Supabase:
+
+1. Ve a tu proyecto Supabase
+2. Abre el SQL Editor
+3. Copia y pega el contenido de `database/schema.sql`
+4. Ejecuta el script
+
+#### 4.2 Insertar Datos Iniciales (Opcional)
+
+**Profesionales de ejemplo:**
+```bash
+# Opción A: Con especialidades (requiere emails únicos)
+# Ejecutar: database/insert_professionals.sql
+
+# Opción B: Solo nombres (emails temporales)
+# Ejecutar: database/insert_professionals_temp.sql
+```
+
+**Niños de ejemplo:**
+```bash
+# Ejecutar: database/insert_children.sql
+```
+
+#### 4.3 Crear Usuario Administrador
+```sql
+-- Crear usuario admin (reemplaza con tu email)
+INSERT INTO profiles (id, email, full_name, role, is_active)
+VALUES (
+  gen_random_uuid(),
+  'tu-email@gmail.com',
+  'Administrador',
+  'admin',
+  true
+);
+```
+
+> ⚠️ **Nota importante**: Los profesionales deben crearse desde el panel de administración de la app, NO directamente en SQL, porque requieren autenticación en Supabase Auth.
+
+### 5. Ejecutar el Proyecto
 
 ```bash
 npm run dev
 ```
 
 Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
+
+### 6. Acceder por Primera Vez
+
+1. Ve a `/login`
+2. Inicia sesión con el email admin que configuraste
+3. Configura los valores en la pestaña "Valores"
+4. Agrega profesionales desde "Profesionales" > "Nuevo Profesional"
+5. Registra niños desde "Niños" > "Nuevo Niño"
 
 ---
 

@@ -13,40 +13,43 @@ interface Professional {
   email: string
 }
 
-interface AddChildModalProps {
+interface Child {
+  id: string
+  full_name: string
+  birth_date: string | null
+  guardian_name: string
+  guardian_phone: string
+  guardian_email: string
+  health_insurance: string
+  assigned_professional_id: string | null
+  is_active: boolean
+}
+
+interface EditChildModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess?: () => void
+  child: Child | null
 }
 
 interface FormData {
   full_name: string
   birth_date: string
-  parent_name: string
-  parent_phone: string
-  parent_email: string
-  assigned_professional_id: string
+  guardian_name: string
+  guardian_phone: string
+  guardian_email: string
   health_insurance: string
+  assigned_professional_id: string
+  is_active: boolean
 }
 
 interface FormErrors {
   full_name?: string
-  parent_name?: string
-  parent_phone?: string
-  parent_email?: string
-  assigned_professional_id?: string
+  guardian_name?: string
+  guardian_phone?: string
+  guardian_email?: string
   health_insurance?: string
   general?: string
-}
-
-const initialFormData: FormData = {
-  full_name: '',
-  birth_date: '',
-  parent_name: '',
-  parent_phone: '',
-  parent_email: '',
-  assigned_professional_id: '',
-  health_insurance: '',
 }
 
 const healthInsuranceOptions = [
@@ -61,8 +64,17 @@ const healthInsuranceOptions = [
   'Otra',
 ]
 
-export function AddChildModal({ isOpen, onClose, onSuccess }: AddChildModalProps) {
-  const [formData, setFormData] = useState<FormData>(initialFormData)
+export function EditChildModal({ isOpen, onClose, onSuccess, child }: EditChildModalProps) {
+  const [formData, setFormData] = useState<FormData>({
+    full_name: '',
+    birth_date: '',
+    guardian_name: '',
+    guardian_phone: '',
+    guardian_email: '',
+    health_insurance: '',
+    assigned_professional_id: '',
+    is_active: true,
+  })
   const [professionals, setProfessionals] = useState<Professional[]>([])
   const [loading, setLoading] = useState(false)
   const [fetchLoading, setFetchLoading] = useState(true)
@@ -79,8 +91,22 @@ export function AddChildModal({ isOpen, onClose, onSuccess }: AddChildModalProps
   }, [isOpen])
 
   useEffect(() => {
+    if (child && isOpen) {
+      setFormData({
+        full_name: child.full_name || '',
+        birth_date: child.birth_date || '',
+        guardian_name: child.guardian_name || '',
+        guardian_phone: child.guardian_phone || '',
+        guardian_email: child.guardian_email || '',
+        health_insurance: child.health_insurance || '',
+        assigned_professional_id: child.assigned_professional_id || '',
+        is_active: child.is_active ?? true,
+      })
+    }
+  }, [child, isOpen])
+
+  useEffect(() => {
     if (!isOpen) {
-      setFormData(initialFormData)
       setErrors({})
       setSuccess(false)
       setToast(null)
@@ -114,22 +140,12 @@ export function AddChildModal({ isOpen, onClose, onSuccess }: AddChildModalProps
       newErrors.full_name = 'El nombre del paciente es obligatorio'
     }
 
-    if (!formData.parent_name.trim()) {
-      newErrors.parent_name = 'El nombre del apoderado es obligatorio'
+    if (!formData.guardian_name.trim()) {
+      newErrors.guardian_name = 'El nombre del apoderado es obligatorio'
     }
 
-    if (!formData.parent_phone.trim()) {
-      newErrors.parent_phone = 'El teléfono del apoderado es obligatorio'
-    } else if (!/^\+?[\d\s-]{8,}$/.test(formData.parent_phone)) {
-      newErrors.parent_phone = 'Ingrese un teléfono válido'
-    }
-
-    if (formData.parent_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.parent_email)) {
-      newErrors.parent_email = 'Ingrese un correo electrónico válido'
-    }
-
-    if (!formData.assigned_professional_id) {
-      newErrors.assigned_professional_id = 'Debe seleccionar un profesional'
+    if (!formData.guardian_phone.trim()) {
+      newErrors.guardian_phone = 'El teléfono es obligatorio'
     }
 
     if (!formData.health_insurance) {
@@ -142,74 +158,67 @@ export function AddChildModal({ isOpen, onClose, onSuccess }: AddChildModalProps
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
-
-    if (!validateForm()) return
+    if (!validateForm() || !child) return
 
     setLoading(true)
     setErrors({})
 
     try {
-      const { data: currentModule } = await supabase
-        .from('module_values')
-        .select('fee_value')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-
-      const feeValue = currentModule?.fee_value || 0
-
-      const { error } = await supabase.from('children').insert({
-        full_name: formData.full_name.trim(),
-        birth_date: formData.birth_date || null,
-        mother_name: formData.parent_name.trim(),
-        mother_phone: formData.parent_phone.trim(),
-        mother_email: formData.parent_email.trim() || null,
-        assigned_professional_id: formData.assigned_professional_id,
-        health_insurance: formData.health_insurance,
-        fee_value: feeValue,
-        is_active: true,
-      })
+      const { error } = await supabase
+        .from('children')
+        .update({
+          full_name: formData.full_name.trim(),
+          birth_date: formData.birth_date || null,
+          guardian_name: formData.guardian_name.trim(),
+          guardian_phone: formData.guardian_phone.trim(),
+          guardian_email: formData.guardian_email.trim() || null,
+          health_insurance: formData.health_insurance,
+          assigned_professional_id: formData.assigned_professional_id || null,
+          is_active: formData.is_active,
+        })
+        .eq('id', child.id)
 
       if (error) throw error
 
       setSuccess(true)
-      setToast({ message: 'Paciente agregado exitosamente', type: 'success' })
+      setToast({ message: 'Paciente actualizado exitosamente', type: 'success' })
 
       setTimeout(() => {
         onSuccess?.()
         onClose()
       }, 1500)
     } catch (error: unknown) {
-      console.error('Error creating child:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Error al agregar el paciente'
+      console.error('Error updating child:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Error al actualizar'
       setToast({ message: errorMessage, type: 'error' })
-      setErrors({ general: errorMessage + '. Intente nuevamente.' })
+      setErrors({ general: errorMessage })
     } finally {
       setLoading(false)
     }
   }
 
-  const handleChange = (field: keyof FormData, value: string) => {
+  const handleChange = (field: keyof FormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }))
+    if (errors[field as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [field as keyof FormErrors]: undefined }))
     }
   }
+
+  if (!child) return null
 
   return (
     <>
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title="Agregar Paciente"
+        title="Editar Paciente"
         maxWidth="full"
       >
         {success ? (
           <div className="flex flex-col items-center justify-center py-6 text-center">
             <CheckCircle size={48} className="text-[#A8E6CF] mb-3" />
             <h3 className="text-lg font-semibold text-[#2D2A32] mb-1">
-              ¡Agregado!
+              ¡Actualizado!
             </h3>
             <p className="text-sm text-[#6B6570]">Redirigiendo...</p>
           </div>
@@ -228,7 +237,7 @@ export function AddChildModal({ isOpen, onClose, onSuccess }: AddChildModalProps
               </h3>
 
               <Input
-                label="Nombre completo *"
+                label="Nombre completo"
                 value={formData.full_name}
                 onChange={(e) => handleChange('full_name', e.target.value)}
                 placeholder="Nombre del paciente"
@@ -270,31 +279,30 @@ export function AddChildModal({ isOpen, onClose, onSuccess }: AddChildModalProps
               </h3>
 
               <Input
-                label="Nombre *"
-                value={formData.parent_name}
-                onChange={(e) => handleChange('parent_name', e.target.value)}
+                label="Nombre"
+                value={formData.guardian_name}
+                onChange={(e) => handleChange('guardian_name', e.target.value)}
                 placeholder="Nombre del apoderado"
                 required
-                error={errors.parent_name}
+                error={errors.guardian_name}
               />
 
               <Input
-                label="Teléfono *"
+                label="Teléfono"
                 type="tel"
-                value={formData.parent_phone}
-                onChange={(e) => handleChange('parent_phone', e.target.value)}
+                value={formData.guardian_phone}
+                onChange={(e) => handleChange('guardian_phone', e.target.value)}
                 placeholder="+56 9 1234 5678"
                 required
-                error={errors.parent_phone}
+                error={errors.guardian_phone}
               />
 
               <Input
                 label="Email"
                 type="email"
-                value={formData.parent_email}
-                onChange={(e) => handleChange('parent_email', e.target.value)}
+                value={formData.guardian_email}
+                onChange={(e) => handleChange('guardian_email', e.target.value)}
                 placeholder="email@ejemplo.com"
-                error={errors.parent_email}
               />
             </div>
 
@@ -305,28 +313,32 @@ export function AddChildModal({ isOpen, onClose, onSuccess }: AddChildModalProps
 
               <div className="w-full">
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Profesional *
+                  Profesional
                 </label>
                 <select
                   value={formData.assigned_professional_id}
                   onChange={(e) => handleChange('assigned_professional_id', e.target.value)}
-                  className={`w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-300 focus:border-[#A38EC3] focus:ring-0 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed ${errors.assigned_professional_id ? 'border-red-500' : ''}`}
+                  className="w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-300 focus:border-[#A38EC3] focus:ring-0 focus:outline-none disabled:bg-gray-100"
                   disabled={fetchLoading}
-                  required
                 >
-                  <option value="">
-                    {fetchLoading ? 'Cargando...' : 'Seleccionar...'}
-                  </option>
-                  {professionals.map((professional) => (
-                    <option key={professional.id} value={professional.id}>
-                      {professional.full_name}
+                  <option value="">Sin asignar</option>
+                  {professionals.map((prof) => (
+                    <option key={prof.id} value={prof.id}>
+                      {prof.full_name}
                     </option>
                   ))}
                 </select>
-                {errors.assigned_professional_id && (
-                  <p className="mt-0.5 text-xs text-red-500">{errors.assigned_professional_id}</p>
-                )}
               </div>
+
+              <label className="flex items-center gap-2 text-xs text-[#6B6570]">
+                <input
+                  type="checkbox"
+                  checked={formData.is_active}
+                  onChange={(e) => handleChange('is_active', e.target.checked)}
+                  className="rounded border-gray-300 text-[#A38EC3] focus:ring-[#A38EC3]"
+                />
+                Paciente activo
+              </label>
             </div>
 
             <div className="flex gap-2 pt-3 sticky bottom-0 bg-white pb-2">

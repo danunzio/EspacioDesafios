@@ -46,17 +46,17 @@ export function StatsCard({
   const styles = colorStyles[color]
 
   return (
-    <div className="bg-white rounded-3xl shadow-lg p-6 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-[#6B6570] mb-1">{title}</p>
-          <p className="text-2xl font-bold text-[#2D2A32] truncate">{value}</p>
-          <p className={`text-xs mt-1 ${styles.text}`}>{subtitle}</p>
-        </div>
+    <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md sm:shadow-lg p-4 sm:p-6 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5">
+      <div className="flex items-center gap-3">
         <div
-          className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${styles.bg}`}
+          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 ${styles.bg}`}
         >
-          <Icon className={styles.icon} size={24} />
+          <Icon className={styles.icon} size={20} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-medium text-[#6B6570] truncate">{title}</p>
+          <p className="text-lg sm:text-2xl font-bold text-[#2D2A32] truncate">{value}</p>
+          <p className={`text-xs ${styles.text}`}>{subtitle}</p>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useState, useEffect, FormEvent } from 'react'
 import { Modal } from '@/components/ui/modal'
@@ -18,6 +18,7 @@ interface FormData {
   email: string
   phone: string
   password: string
+  specialty: string
 }
 
 interface FormErrors {
@@ -25,6 +26,7 @@ interface FormErrors {
   email?: string
   phone?: string
   password?: string
+  specialty?: string
   general?: string
 }
 
@@ -33,6 +35,7 @@ const initialFormData: FormData = {
   email: '',
   phone: '',
   password: '',
+  specialty: '',
 }
 
 export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessionalModalProps) {
@@ -73,6 +76,10 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
       newErrors.password = 'La contraseña es obligatoria'
     } else if (formData.password.length < 6) {
       newErrors.password = 'La contraseña debe tener al menos 6 caracteres'
+    }
+
+    if (!formData.specialty.trim()) {
+      newErrors.specialty = 'La especialidad es obligatoria'
     }
 
     if (formData.phone && !/^\+?[\d\s-]{8,}$/.test(formData.phone)) {
@@ -139,6 +146,7 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
         email: formData.email.toLowerCase().trim(),
         full_name: formData.full_name.trim(),
         phone: formData.phone.trim() || null,
+        specialty: formData.specialty.trim(),
         role: 'professional',
         is_active: true,
       })
@@ -212,6 +220,15 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
             />
 
             <Input
+              label="Especialidad"
+              value={formData.specialty}
+              onChange={(e) => handleChange('specialty', e.target.value)}
+              placeholder="Ej: Psicología, Fonoaudiología, etc."
+              required
+              error={errors.specialty}
+            />
+
+            <Input
               label="Correo electrónico"
               type="email"
               value={formData.email}
@@ -251,7 +268,7 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
               </button>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 pt-6">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-6">
               <Button
                 type="button"
                 variant="outline"

@@ -14,8 +14,8 @@ interface CardProps {
 }
 
 const variantStyles = {
-  default: 'bg-white shadow-lg',
-  soft: 'bg-white shadow-md',
+  default: 'bg-white shadow-md sm:shadow-lg',
+  soft: 'bg-white shadow-sm sm:shadow-md',
 }
 
 export function Card({
@@ -26,7 +26,7 @@ export function Card({
   return (
     <div
       className={cn(
-        'rounded-3xl p-6',
+        'rounded-2xl sm:rounded-3xl p-4 sm:p-6',
         variantStyles[variant],
         className
       )}
@@ -43,7 +43,7 @@ interface CardHeaderProps {
 
 export function CardHeader({ children, className }: CardHeaderProps) {
   return (
-    <div className={cn('mb-4', className)}>
+    <div className={cn('mb-3 sm:mb-4', className)}>
       {children}
     </div>
   )
@@ -69,7 +69,7 @@ interface CardFooterProps {
 
 export function CardFooter({ children, className }: CardFooterProps) {
   return (
-    <div className={cn('mt-4 pt-4 border-t border-gray-100', className)}>
+    <div className={cn('mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100', className)}>
       {children}
     </div>
   )

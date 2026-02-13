@@ -88,7 +88,7 @@ export function MonthlySummary({
           <div className="flex items-center gap-2 mb-3">
             <Users className="text-[#9A94A0]" size={16} />
             <span className="text-sm font-medium text-[#6B6570]">
-              Promedio por Niño
+              Promedio por Paciente
             </span>
           </div>
           <div className="flex items-center gap-4">

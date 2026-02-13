@@ -111,12 +111,12 @@ export function ChildForm({
           </div>
           <div>
             <h2 className="text-xl font-bold text-[#2D2A32]">
-              {isEditing ? 'Editar Niño' : 'Nuevo Niño'}
+              {isEditing ? 'Editar Paciente' : 'Nuevo Paciente'}
             </h2>
             <p className="text-sm text-[#6B6570]">
               {isEditing
-                ? 'Actualiza la información del niño'
-                : 'Completa los datos del nuevo niño'}
+                ? 'Actualiza la información del paciente'
+                : 'Completa los datos del nuevo paciente'}}
             </p>
           </div>
         </div>
@@ -132,7 +132,7 @@ export function ChildForm({
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-[#6B6570] uppercase tracking-wide flex items-center gap-2">
             <Baby size={16} />
-            Datos del Niño
+            Datos del Paciente
           </h3>
 
           <Input
@@ -223,7 +223,7 @@ export function ChildForm({
             disabled={isSubmitting}
           >
             <Save size={18} className="mr-2" />
-            {isSubmitting ? 'Guardando...' : isEditing ? 'Guardar Cambios' : 'Crear Niño'}
+            {isSubmitting ? 'Guardando...' : isEditing ? 'Guardar Cambios' : 'Crear Paciente'}
           </Button>
           <Button
             type="button"

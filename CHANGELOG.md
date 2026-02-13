@@ -1,0 +1,204 @@
+# 📋 Changelog - Espacio Desafíos
+
+Todos los cambios notables de este proyecto serán documentados en este archivo.
+
+El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/ES/1.0.0/),
+y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
+
+---
+
+## [1.0.0] - 2026-02-13
+
+### ✨ Agregado
+
+#### 🎨 UI/UX y Diseño Responsive
+- **Rediseño completo de modales** para móvil (bottom sheet style en dispositivos pequeños)
+- **Optimización para Samsung S8** (360x740px) y dispositivos similares
+- **Navegación inferior mejorada** con iconos y textos adaptativos
+- **Header compacto** para móvil con altura reducida
+- **Componentes UI responsive**: Cards, Inputs, Buttons con tamaños adaptativos
+- **Animaciones suaves** para modales (slide-up en móvil, scale en desktop)
+- **Toast notifications reposicionados** para no interferir con bottom nav
+
+#### 👶 Gestión de Niños
+- **Campo Obra Social** en formulario de niños con 9 opciones predefinidas
+- **Visualización de obra social** en listados de niños (panel admin y profesional)
+- **Modal de edición de niños** completo con todos los campos
+- **Funcionalidad de editar niños** operativa desde el panel administrador
+- **Filtrado por profesional** en listado de niños
+- **Integración con datos reales** de Supabase (Server Components)
+
+#### 👨‍⚕️ Gestión de Profesionales
+- **Campo Especialidad** obligatorio en registro de profesionales
+- **Modal de agregar profesional** con validaciones completas
+- **Integración con Supabase Auth** para creación de usuarios
+- **Scripts SQL** para carga masiva de profesionales (75 profesionales)
+- **Asignación de profesionales** a niños desde el panel admin
+
+#### ⚙️ Panel de Administración - Valores
+- **4 tipos de valores configurables**:
+  - Nomenclatura
+  - Módulos
+  - OSDE
+  - Sesión Individual
+- **Tabs interactivos** para cambiar entre tipos de valores
+- **Historial por tipo de valor** con indicador de valor actual
+- **Resumen mensual** con todos los valores configurados
+- **Formulario de configuración** por período (año/mes)
+
+#### 🗂️ Estructura de Datos
+- **Tabla `children`** ampliada con campo `health_insurance`
+- **Tabla `profiles`** con campo `specialty` para profesionales
+- **Sistema de valores múltiples** en reemplazo de valor único de módulo
+- **Scripts SQL** para inserción masiva de datos:
+  - `insert_professionals.sql` - 75 profesionales con especialidades
+  - `insert_children.sql` - 15 niños con obras sociales
+  - `insert_professionals_temp.sql` - Emails temporales para profesionales
+
+#### 🔧 Mejoras Técnicas
+- **Server Components** para carga de datos reales (niños y profesionales)
+- **Client Components** para interactividad (modales, filtros, búsqueda)
+- **Separación de responsabilidades** en páginas admin:
+  - `page.tsx` - Server Component (carga de datos)
+  - `admin-children-client.tsx` - Client Component (UI interactiva)
+- **TypeScript estricto** en todos los nuevos componentes
+- **Manejo de errores** mejorado en formularios
+- **Validaciones de formulario** completas con mensajes descriptivos
+
+### 🐛 Corregido
+
+#### Errores de Build
+- **Variable `body` duplicada** en `route.ts` renombrada a `requestBody` y `messageBody`
+- **Errores de TypeScript** en componentes de modales
+- **Conflictos de nombres** en parámetros de funciones
+
+#### Errores de Funcionalidad
+- **Botón "Editar" no funcionaba** - Creado modal de edición completo
+- **Datos de prueba en producción** - Migrado a datos reales de Supabase
+- **Página de profesionales con mock data** - Ahora consulta base de datos real
+- **Campo email nullable** - Solucionado con emails temporales para profesionales
+
+#### Responsive
+- **Modales cortados en móvil** - Ahora usan max-height y scroll adecuado
+- **Bottom nav tapa contenido** - Agregado padding-bottom seguro
+- **Textos desbordados** - Implementado truncamiento con ellipsis
+- **Botones muy pequeños** - Aumentado tamaño mínimo a 44px para touch
+
+### 📝 Documentación
+
+#### Nuevos Archivos
+- `CHANGELOG.md` - Este archivo
+- `database/README.md` - Instrucciones para carga de datos
+- `database/schema.sql` - Esquema completo de base de datos
+- `database/insert_professionals.sql` - Script profesionales con especialidades
+- `database/insert_children.sql` - Script niños con obras sociales
+- `database/insert_professionals_temp.sql` - Script profesionales sin email
+
+#### Archivos Actualizados
+- `README.md` - Estructura de tablas actualizada
+
+### 🔒 Seguridad
+- **Row Level Security (RLS)** configurado en todas las tablas
+- **Políticas de acceso** por rol (admin/profesional)
+- **Validación en servidor** de todos los formularios
+- **Sanitización de inputs** en campos de texto
+
+---
+
+## [0.9.0] - 2026-02-12
+
+### ✨ Agregado
+- Estructura base del proyecto con Next.js 15
+- Autenticación con Supabase Auth
+- Sistema de roles (admin/profesional)
+- Dashboard básico para administradores
+- Dashboard básico para profesionales
+- Navegación inferior con 5 tabs
+- Pantalla de login funcional
+- PWA básica con manifest y service worker
+
+### 🎨 UI
+- Paleta de colores definida
+- Componentes UI base (Button, Card, Input, Badge)
+- Sistema de diseño con Tailwind CSS v4
+- Layout responsive inicial
+
+---
+
+## 📊 Estadísticas del Proyecto
+
+### Líneas de Código
+- **TypeScript/JavaScript**: ~15,000 líneas
+- **CSS/Tailwind**: ~2,000 líneas
+- **SQL**: ~500 líneas
+
+### Componentes Creados
+- **UI Components**: 8
+- **Modales**: 4 (AddChild, EditChild, AddProfessional, EditProfessional)
+- **Páginas**: 15+
+- **Hooks personalizados**: 3
+
+### Tablas de Base de Datos
+- **profiles**: Usuarios y profesionales
+- **children**: Niños/pacientes
+- **monthly_sessions**: Sesiones mensuales
+- **module_values**: Valores de módulos terapéuticos
+- **liquidations**: Liquidaciones a profesionales
+- **commission_payments**: Pagos de comisiones
+- **session_statistics**: Estadísticas de sesiones
+- **audit_logs**: Auditoría de cambios
+
+---
+
+## 🎯 Próximas Versiones (Roadmap)
+
+### [1.1.0] - Planificado
+- [ ] Página de perfil de usuario
+- [ ] Edición de perfil para profesionales
+- [ ] Cambio de contraseña
+- [ ] Recuperación de contraseña vía email
+- [ ] Notificaciones push para nuevas liquidaciones
+- [ ] Exportar reportes a PDF/Excel
+
+### [1.2.0] - Planificado
+- [ ] Sistema de mensajería interna
+- [ ] Calendario de sesiones
+- [ ] Recordatorios automáticos
+- [ ] App móvil nativa (React Native)
+- [ ] Integración con WhatsApp Business
+
+### [2.0.0] - Planificado
+- [ ] Multi-sucursal
+- [ ] Facturación electrónica
+- [ ] Integración con sistemas de salud
+- [ ] Portal para padres/tutores
+- [ ] Reportes avanzados con IA
+
+---
+
+## 🏆 Créditos
+
+### Desarrollo
+- **Frontend**: Next.js 15, React, TypeScript, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL, Auth, Storage)
+- **PWA**: next-pwa, Service Workers
+- **UI/UX**: Diseño responsive mobile-first
+
+### Inspiración
+- Diseño inspirado en apps modernas de gestión
+- Paleta de colores suaves y terapéuticas
+- Enfoque en usabilidad para usuarios no técnicos
+
+---
+
+## 📞 Contacto
+
+Para reportar bugs o sugerir mejoras:
+- GitHub Issues: [https://github.com/danunzio/EspacioDesafios/issues](https://github.com/danunzio/EspacioDesafios/issues)
+- Email: soporte@espaciodesafios.cl
+
+---
+
+<p align="center">
+  <strong>Espacio Desafíos - Cambiando vidas, una terapia a la vez</strong>
+</p>

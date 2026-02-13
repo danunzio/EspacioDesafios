@@ -6,11 +6,11 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const requestBody = await request.json();
     
     const { 
       title, 
-      body, 
+      body: messageBody, 
       icon, 
       badge,
       tag,
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       actions,
       data,
       subscriptions 
-    } = body;
+    } = requestBody;
 
     // Validate required fields
     if (!title) {
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     // Notification payload
     const notificationPayload = {
       title: title || 'Espacio Desafíos',
-      body: body || '',
+      body: messageBody || '',
       icon: icon || '/icons/icon-192x192.png',
       badge: badge || '/icons/icon-192x192.png',
       tag: tag || 'notification',

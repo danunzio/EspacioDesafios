@@ -90,7 +90,7 @@ export default function ProfessionalSessionsPage() {
   const hasChanges = sessions.some((s) => s.session_count > 0);
 
   const getChildName = (childId: string) => {
-    return mockMyChildren.find((c) => c.id === childId)?.full_name || 'Niño';
+    return mockMyChildren.find((c) => c.id === childId)?.full_name || 'Paciente';
   };
 
   return (
@@ -150,11 +150,11 @@ export default function ProfessionalSessionsPage() {
           <div className="flex items-center gap-2">
             <Users className="text-[#A38EC3]" size={24} />
             <h3 className="text-lg font-semibold text-[#2D2A32]">
-              Mis Niños
+              Mis Pacientes
             </h3>
           </div>
           <Badge variant="default">
-            {mockMyChildren.length} niños asignados
+            {mockMyChildren.length} pacientes asignados
           </Badge>
         </div>
 
@@ -198,7 +198,7 @@ export default function ProfessionalSessionsPage() {
             </h3>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+<div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="bg-white/50 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Calendar className="text-[#A38EC3]" size={16} />
@@ -225,7 +225,7 @@ export default function ProfessionalSessionsPage() {
               <div className="flex items-center gap-2 mb-2">
                 <DollarSign className="text-[#A8E6CF]" size={16} />
                 <span className="text-sm font-medium text-[#6B6570]">
-                  Facturación
+                  Facturación Total
                 </span>
               </div>
               <p className="text-2xl font-bold text-[#2D2A32]">
@@ -243,8 +243,20 @@ export default function ProfessionalSessionsPage() {
               <p className="text-2xl font-bold text-[#2D2A32]">
                 {formatCurrency(netAmount)}
               </p>
+            </div>
+
+            <div className="bg-white/50 rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="text-[#F4C2C2]" size={16} />
+                <span className="text-sm font-medium text-[#6B6570]">
+                  Espacio Desafíos (25%)
+                </span>
+              </div>
+              <p className="text-2xl font-bold text-[#2D2A32]">
+                {formatCurrency(commission)}
+              </p>
               <p className="text-xs text-[#6B6570]">
-                Comisión: {formatCurrency(commission)}
+                Retención clínica
               </p>
             </div>
           </div>

@@ -40,14 +40,14 @@ export function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="w-full">
       <CardHeader className="text-center pb-2">
         <div className="flex justify-center mb-4">
           <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-3xl">
             🧩
           </div>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900">Iniciar Sesión</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Iniciar Sesión</h2>
         <p className="text-sm text-gray-500 mt-1">
           Espacio Desafíos
         </p>
@@ -86,7 +86,7 @@ export function LoginForm() {
 
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-sm text-red-600 text-center">{error}</p>
             </div>
           )}
 

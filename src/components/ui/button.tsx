@@ -15,9 +15,9 @@ const variantStyles = {
 }
 
 const sizeStyles = {
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2 text-base',
-  lg: 'px-6 py-3 text-lg',
+  sm: 'px-2 sm:px-3 py-1.5 text-xs sm:text-sm',
+  md: 'px-3 sm:px-4 py-2 text-sm sm:text-base',
+  lg: 'px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-lg',
 }
 
 export function Button({
@@ -34,9 +34,10 @@ export function Button({
         font-medium transition-all duration-200 ease-in-out
         focus:outline-none focus:ring-2 focus:ring-[#A38EC3] focus:ring-offset-2
         disabled:opacity-50 disabled:cursor-not-allowed
+        whitespace-nowrap
         ${variantStyles[variant]}
         ${sizeStyles[size]}
-        rounded-[16px]
+        rounded-xl sm:rounded-[16px]
         ${className}
       `}
       disabled={disabled}

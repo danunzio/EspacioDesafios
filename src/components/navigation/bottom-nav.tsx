@@ -9,18 +9,18 @@ interface BottomNavProps {
 }
 
 const adminTabs = [
-  { icon: Home, label: 'Dashboard', href: '/dashboard' },
-  { icon: Users, label: 'Profesionales', href: '/professionals' },
-  { icon: Baby, label: 'Niños', href: '/children' },
-  { icon: Settings, label: 'Valores', href: '/settings' },
-  { icon: DollarSign, label: 'Liquidaciones', href: '/payments' },
+  { icon: Home, label: 'Inicio', href: '/admin' },
+  { icon: Users, label: 'Profs', href: '/admin/profesionales' },
+  { icon: Baby, label: 'Pacientes', href: '/admin/ninos' },
+  { icon: Settings, label: 'Valores', href: '/admin/valores' },
+  { icon: DollarSign, label: 'Liquid', href: '/admin/liquidaciones' },
 ];
 
 const professionalTabs = [
-  { icon: Home, label: 'Dashboard', href: '/dashboard' },
-  { icon: Baby, label: 'Mis Niños', href: '/my-children' },
-  { icon: Calendar, label: 'Sesiones', href: '/sessions' },
-  { icon: Receipt, label: 'Facturación', href: '/billing' },
+  { icon: Home, label: 'Inicio', href: '/profesional' },
+  { icon: Baby, label: 'Pacientes', href: '/profesional/ninos' },
+  { icon: Calendar, label: 'Sesiones', href: '/profesional/sesiones' },
+  { icon: Receipt, label: 'Factura', href: '/profesional/facturacion' },
 ];
 
 export function BottomNav({ userRole }: BottomNavProps) {
@@ -29,7 +29,7 @@ export function BottomNav({ userRole }: BottomNavProps) {
   const tabs = userRole === 'admin' ? adminTabs : professionalTabs;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white shadow-lg pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] pb-safe">
       <div className="flex items-center justify-around h-16">
         {tabs.map((tab) => {
           const isActive = pathname === tab.href || pathname.startsWith(tab.href);
@@ -40,12 +40,14 @@ export function BottomNav({ userRole }: BottomNavProps) {
               key={tab.href}
               onClick={() => router.push(tab.href)}
               className={cn(
-                'flex flex-col items-center justify-center w-full h-full gap-1 transition-colors',
-                isActive ? 'text-primary' : 'text-gray-500 hover:text-gray-700'
+                'flex flex-col items-center justify-center w-full h-full gap-1 transition-colors duration-200',
+                isActive ? 'text-[#A38EC3]' : 'text-gray-400 hover:text-gray-600'
               )}
             >
-              <Icon size={24} />
-              <span className="text-xs">{tab.label}</span>
+              <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+              <span className="text-[10px] sm:text-xs font-medium truncate max-w-[60px] text-center leading-tight">
+                {tab.label}
+              </span>
             </button>
           );
         })}

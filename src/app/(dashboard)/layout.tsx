@@ -38,9 +38,9 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-[#F8F7FF]">
-      <Header title={isAdmin ? 'Panel Admin' : 'Mi Dashboard'} />
+      <Header title={isAdmin ? 'Panel Administracion' : 'Mi Dashboard'} isAdmin={isAdmin} />
       
-      <main className="pb-20 pt-4 px-4">
+      <main className="pb-16 sm:pb-20 pt-2 sm:pt-4 px-3 sm:px-4">
         <div className="max-w-7xl mx-auto">
           {children}
         </div>
