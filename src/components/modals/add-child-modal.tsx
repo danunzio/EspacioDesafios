@@ -31,6 +31,7 @@ interface FormData {
 
 interface FormErrors {
   full_name?: string
+  birth_date?: string
   parent_name?: string
   parent_phone?: string
   parent_email?: string
