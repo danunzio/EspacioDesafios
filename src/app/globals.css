@@ -1,26 +1,189 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Colores personalizados de la app */
+  --color-primary: #A38EC3;
+  --color-primary-light: #B8A5D3;
+  --color-primary-dark: #8A75AA;
+  
+  --color-pink: #F4C2C2;
+  --color-pink-light: #F8D7D7;
+  --color-pink-dark: #E8A5A5;
+  
+  --color-yellow: #F9E79F;
+  --color-yellow-light: #FCF1C2;
+  --color-yellow-dark: #F0D97A;
+  
+  --color-aqua: #A8E6CF;
+  --color-aqua-light: #C2F0E0;
+  --color-aqua-dark: #8ED9B8;
+  
+  --color-bg: #F8F7FF;
+  --color-bg-card: #FFFFFF;
+  --color-bg-card-alt: #FAFAFF;
+  
+  --color-text-primary: #2D2A32;
+  --color-text-secondary: #6B6570;
+  --color-text-muted: #9A94A0;
+  
+  --color-border: #E8E5F0;
+  --color-border-light: #F0EDF5;
+  
+  --shadow-soft: 0 4px 20px rgba(163, 142, 195, 0.15);
+  --shadow-card: 0 2px 12px rgba(163, 142, 195, 0.08);
+  --shadow-button: 0 4px 14px rgba(163, 142, 195, 0.3);
+  
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  
+  --radius: 0.625rem;
+  
+  /* Safe areas para iPhone con notch */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #F8F7FF;
+  --foreground: #2D2A32;
+  --card: #FFFFFF;
+  --card-foreground: #2D2A32;
+  --popover: #FFFFFF;
+  --popover-foreground: #2D2A32;
+  --primary: #A38EC3;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F4C2C2;
+  --secondary-foreground: #2D2A32;
+  --muted: #FAFAFF;
+  --muted-foreground: #6B6570;
+  --accent: #F9E79F;
+  --accent-foreground: #2D2A32;
+  --destructive: #F87171;
+  --border: #E8E5F0;
+  --input: #E8E5F0;
+  --ring: #A38EC3;
+  --radius: 0.625rem;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: var(--safe-area-top);
+  padding-bottom: var(--safe-area-bottom);
+  padding-left: var(--safe-area-left);
+  padding-right: var(--safe-area-right);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(163, 142, 195, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(163, 142, 195, 0.5);
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-fade-in-delay-1 {
+  animation: fadeIn 0.4s ease-out 0.1s forwards;
+  opacity: 0;
+}
+
+.animate-fade-in-delay-2 {
+  animation: fadeIn 0.4s ease-out 0.2s forwards;
+  opacity: 0;
+}
+
+.animate-fade-in-delay-3 {
+  animation: fadeIn 0.4s ease-out 0.3s forwards;
+  opacity: 0;
+}
+
+/* Safe area utilities */
+.pt-safe {
+  padding-top: var(--safe-area-top);
+}
+
+.pb-safe {
+  padding-bottom: var(--safe-area-bottom);
+}
+
+.px-safe {
+  padding-left: var(--safe-area-left);
+  padding-right: var(--safe-area-right);
+}
+
+/* Touch action optimization */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Disable text selection on UI elements */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Focus visible styles */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

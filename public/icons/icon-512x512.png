@@ -1,0 +1,24 @@
+PLACEHOLDER FILE
+
+This file should be replaced with an actual 512x512 PNG icon.
+
+Instructions:
+1. Create a square PNG image (512x512 pixels)
+2. Save it as "icon-512x512.png"
+3. Place it in the public/icons/ directory
+4. Replace this file
+
+Recommended design:
+- Background color: #A38EC3 (lavender/purple)
+- Icon: White or light colored symbol representing therapy/childcare
+- Safe zone: Keep important content within 432x432 pixels (center)
+- Format: PNG with transparency
+- High resolution for sharp display on all devices
+
+The icon will be used for:
+- Splash screen on mobile devices
+- High-DPI displays
+- App store listings
+- Large format displays
+
+Note: This icon is automatically scaled down to create smaller sizes.
