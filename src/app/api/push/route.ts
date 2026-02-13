@@ -115,9 +115,10 @@ export async function POST(request: NextRequest) {
       },
       expiredSubscriptions: expired,
       results: results.map((r, index) => ({
-        subscriptionId: subscriptions[index]?.id,
         status: r.status,
-        ...(r.status === 'fulfilled' ? r.value : { error: r.reason?.message })
+        ...(r.status === 'fulfilled' 
+          ? { ...r.value, subscriptionId: subscriptions[index]?.id } 
+          : { subscriptionId: subscriptions[index]?.id, error: r.reason?.message })
       }))
     });
 
