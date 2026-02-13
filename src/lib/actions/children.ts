@@ -177,7 +177,7 @@ export async function getChildren(
     // Transform data to include professional_name
     const transformedData = (data as ChildWithProfessional[])?.map((child) => ({
       ...child,
-      professional_name: child.professional?.full_name || null,
+      professional_name: child.professional?.full_name || undefined,
     })) || []
 
     return {
@@ -219,7 +219,7 @@ export async function getChildById(
 
     const transformedData = {
       ...data,
-      professional_name: data.professional?.full_name || null,
+      professional_name: data.professional?.full_name || undefined,
     }
 
     return {

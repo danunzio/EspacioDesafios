@@ -105,7 +105,12 @@ export async function calculateLiquidation(
     for (const session of sessions) {
       const moduleName = session.module_name;
       const count = session.session_count || 0;
-      const rate = session.module?.base_value || 0;
+      // Handle module as array or object depending on Supabase response
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const moduleData = session.module as any;
+      const rate = Array.isArray(moduleData) 
+        ? moduleData[0]?.base_value || 0 
+        : moduleData?.base_value || 0;
 
       if (moduleMap.has(moduleName)) {
         const existing = moduleMap.get(moduleName)!;
