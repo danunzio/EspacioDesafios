@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     const failed = results.filter(r => r.status === 'rejected' || !r.value.success).length;
     const expired = results
       .filter(r => r.status === 'fulfilled' && r.value.expired)
-      .map(r => (r as PromiseFulfilledResult<any>).value.subscriptionId);
+      .map(r => (r as PromiseFulfilledResult<{ subscriptionId: string; expired: boolean }>).value.subscriptionId);
 
     return NextResponse.json({
       success: true,

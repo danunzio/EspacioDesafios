@@ -116,7 +116,7 @@ export function ChildForm({
             <p className="text-sm text-[#6B6570]">
               {isEditing
                 ? 'Actualiza la información del paciente'
-                : 'Completa los datos del nuevo paciente'}}
+                : 'Completa los datos del nuevo paciente'}
             </p>
           </div>
         </div>

@@ -42,6 +42,17 @@ export interface Liquidation {
   };
 }
 
+export interface LiquidationStats {
+  total: number;
+  pending: number;
+  approved: number;
+  paid: number;
+  cancelled: number;
+  totalAmount: number;
+  paidAmount: number;
+  pendingAmount: number;
+}
+
 /**
  * Calculate liquidation for a professional in a specific month
  * @param professionalId - The professional ID
@@ -394,7 +405,7 @@ export async function cancelLiquidation(
 export async function getLiquidationStats(
   year: number,
   month?: number
-): Promise<{ success: boolean; data?: any; error?: string }> {
+): Promise<{ success: boolean; data?: LiquidationStats; error?: string }> {
   try {
     const supabase = await createClient();
 
