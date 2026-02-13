@@ -24,9 +24,9 @@ interface ChildWithProfessional {
   id: string;
   full_name: string;
   birth_date: string;
-  parent_name: string;
-  parent_phone: string;
-  parent_email: string;
+  guardian_name: string;
+  guardian_phone: string;
+  guardian_email: string;
   assigned_professional_id: string | null;
   professional_name: string | null;
   health_insurance: string;
@@ -67,7 +67,7 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
     return children.filter((child) => {
       const matchesSearch =
         child.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        child.parent_name.toLowerCase().includes(searchQuery.toLowerCase());
+        child.guardian_name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesProfessional =
         selectedProfessional === 'all' ||
         child.assigned_professional_id === selectedProfessional;
@@ -180,12 +180,12 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
                       </span>
                       <span className="flex items-center gap-1.5 text-sm text-[#6B6570]">
                         <Users size={14} className="flex-shrink-0" />
-                        <span className="truncate">{child.parent_name}</span>
+                        <span className="truncate">{child.guardian_name}</span>
                       </span>
-                      {child.parent_phone && (
+                      {child.guardian_phone && (
                         <span className="flex items-center gap-1.5 text-sm text-[#6B6570]">
                           <Phone size={14} className="flex-shrink-0" />
-                          {child.parent_phone}
+                          {child.guardian_phone}
                         </span>
                       )}
                     </div>
