@@ -1,19 +1,16 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { StatsCard } from '@/components/admin/stats-card'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { AddChildModal } from '@/components/modals/add-child-modal'
-import { AddProfessionalModal } from '@/components/modals/add-professional-modal'
 import {
   Users,
   Baby,
   DollarSign,
   FileText,
   Plus,
-  UserPlus,
-  Settings,
+  TrendingDown,
   TrendingUp,
 } from 'lucide-react'
 
@@ -52,22 +49,10 @@ export function AdminDashboardClient({
   stats,
   recentActivity,
 }: AdminDashboardClientProps) {
-  const [isAddChildModalOpen, setIsAddChildModalOpen] = useState(false)
-  const [isAddProfessionalModalOpen, setIsAddProfessionalModalOpen] = useState(false)
-  const [refreshKey, setRefreshKey] = useState(0)
-
-  const handleChildSuccess = useCallback(() => {
-    setRefreshKey((prev) => prev + 1)
-    window.location.reload()
-  }, [])
-
-  const handleProfessionalSuccess = useCallback(() => {
-    setRefreshKey((prev) => prev + 1)
-    window.location.reload()
-  }, [])
+  const router = useRouter()
 
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fade-in" key={refreshKey}>
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
       {/* Header */}
       <div className="text-center sm:text-left">
         <h2 className="text-xl sm:text-2xl font-bold text-[#2D2A32]">
@@ -110,37 +95,28 @@ export function AdminDashboardClient({
         />
       </div>
 
-      {/* Acciones Rápidas */}
-      <Card variant="soft" className="bg-gradient-to-r from-[#A38EC3]/10 to-[#F4C2C2]/10">
-        <div className="text-center sm:text-left">
-          <h3 className="text-lg font-semibold text-[#2D2A32]">
-            Acciones Rápidas
-          </h3>
-          <p className="text-sm text-[#6B6570] mb-4">
-            Gestiona tu clínica de forma eficiente
-          </p>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button 
-              variant="primary" 
-              onClick={() => setIsAddChildModalOpen(true)}
-              className="w-full sm:w-auto"
-            >
-              <Plus size={18} className="mr-2" />
-              Nuevo Paciente
-            </Button>
-            <Button 
-              variant="secondary" 
-              onClick={() => setIsAddProfessionalModalOpen(true)}
-              className="w-full sm:w-auto"
-            >
-              <UserPlus size={18} className="mr-2" />
-              Nuevo Profesional
-            </Button>
-            <Button variant="outline" className="w-full sm:w-auto">
-              <Settings size={18} className="mr-2" />
-              Configuración
-            </Button>
+      {/* Acción Rápida - Agregar Gasto */}
+      <Card 
+        variant="soft" 
+        className="bg-gradient-to-r from-[#E8A5A5]/10 to-[#F4C2C2]/10 cursor-pointer hover:shadow-md transition-shadow"
+        onClick={() => router.push('/admin/consumos')}
+      >
+        <div className="flex items-center gap-4 p-2">
+          <div className="w-12 h-12 rounded-full bg-[#E8A5A5]/20 flex items-center justify-center flex-shrink-0">
+            <TrendingDown className="text-[#E8A5A5]" size={24} />
           </div>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-[#2D2A32]">
+              Agregar gasto
+            </h3>
+            <p className="text-sm text-[#6B6570]">
+              Registra un nuevo gasto operativo
+            </p>
+          </div>
+          <Button variant="primary" size="sm" className="flex-shrink-0">
+            <Plus size={18} className="mr-2" />
+            Agregar
+          </Button>
         </div>
       </Card>
 
@@ -180,19 +156,6 @@ export function AdminDashboardClient({
           </p>
         )}
       </Card>
-
-      {/* Modals */}
-      <AddChildModal
-        isOpen={isAddChildModalOpen}
-        onClose={() => setIsAddChildModalOpen(false)}
-        onSuccess={handleChildSuccess}
-      />
-
-      <AddProfessionalModal
-        isOpen={isAddProfessionalModalOpen}
-        onClose={() => setIsAddProfessionalModalOpen(false)}
-        onSuccess={handleProfessionalSuccess}
-      />
     </div>
   )
 }

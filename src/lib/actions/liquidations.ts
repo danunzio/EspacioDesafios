@@ -3,12 +3,51 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
+// Internal function to get professional commission (can't import from values.ts in use server files)
+async function getProfessionalCommissionInternal(
+  professionalId: string,
+  valueType: string
+): Promise<{ success: boolean; percentage?: number; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from('professional_modules')
+      .select('commission_percentage')
+      .eq('professional_id', professionalId)
+      .eq('value_type', valueType)
+      .eq('is_active', true)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      throw new Error(`Error fetching commission: ${error.message}`);
+    }
+
+    // Default to 25% if not configured
+    const percentage = data?.commission_percentage ?? 25;
+
+    return {
+      success: true,
+      percentage
+    };
+  } catch (error) {
+    console.error('Error fetching professional commission:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al obtener la comisión'
+    };
+  }
+}
+
 export interface LiquidationCalculation {
   professionalId: string;
   year: number;
   month: number;
   totalSessions: number;
   totalAmount: number;
+  professionalPercentage: number;
+  professionalAmount: number;
+  clinicAmount: number;
   moduleBreakdown: ModuleBreakdown[];
 }
 
@@ -26,6 +65,9 @@ export interface Liquidation {
   month: number;
   total_sessions: number;
   total_amount: number;
+  professional_percentage: number;
+  professional_amount: number;
+  clinic_amount: number;
   module_breakdown: ModuleBreakdown[];
   status: 'pending' | 'approved' | 'paid' | 'cancelled';
   approved_at: string | null;
@@ -143,6 +185,16 @@ export async function calculateLiquidation(
     // Sort by module name
     moduleBreakdown.sort((a, b) => a.moduleName.localeCompare(b.moduleName));
 
+    // Get professional commission percentage (default to 'modulos' type)
+    const commissionResult = await getProfessionalCommissionInternal(professionalId, 'modulos');
+    const professionalPercentage = commissionResult.success && commissionResult.percentage 
+      ? commissionResult.percentage 
+      : 25;
+
+    // Calculate amounts based on custom percentage
+    const professionalAmount = totalAmount * (professionalPercentage / 100);
+    const clinicAmount = totalAmount - professionalAmount;
+
     return {
       success: true,
       data: {
@@ -151,6 +203,9 @@ export async function calculateLiquidation(
         month,
         totalSessions,
         totalAmount,
+        professionalPercentage,
+        professionalAmount,
+        clinicAmount,
         moduleBreakdown
       }
     };
@@ -249,6 +304,9 @@ export async function createOrUpdateLiquidation(
         month,
         total_sessions: calculation.data.totalSessions,
         total_amount: calculation.data.totalAmount,
+        professional_percentage: calculation.data.professionalPercentage,
+        professional_amount: calculation.data.professionalAmount,
+        clinic_amount: calculation.data.clinicAmount,
         module_breakdown: calculation.data.moduleBreakdown,
         status: 'pending'
       }, {

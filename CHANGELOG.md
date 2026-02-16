@@ -7,6 +7,25 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [1.0.1] - 2026-02-15
+
+### 🐛 Corregido
+
+#### Errores de Runtime
+- **TypeError en admin-children-client.tsx** - Agregado fallback `(child.professional_names ?? [])` para prevenir errores cuando professional_names es undefined
+
+#### UI/UX
+- **Botón "Ver Perfil" eliminado** de la lista de profesionales - Ahora al hacer click en la tarjeta del profesional se navega directamente al perfil
+- **Botón "Eliminar" eliminado** de las listas de profesionales y pacientes
+- **Botón "Eliminar paciente" agregado** dentro del modal de edición de pacientes
+- **Botón "Desactivar profesional"** renombrado correctamente en modal de edición
+- **Importes no utilizados** limpiados (Trash2, Eye)
+
+### 📝 Documentación
+- Actualización de README.md con nuevos flujos de UI
+
+---
+
 ## [1.0.0] - 2026-02-13
 
 ### ✨ Agregado

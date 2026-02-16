@@ -28,17 +28,17 @@ El sistema nace de la necesidad de digitalizar y optimizar la gestión administr
 
 | Perfil | Necesidades Cubiertas |
 |--------|----------------------|
-| **Administradores** | Gestión completa de profesionales, niños, valores y liquidaciones |
-| **Profesionales Terapeutas** | Registro de sesiones, consulta de niños asignados, facturación personal |
+| **Administradores** | Gestión completa de profesionales, niños, valores, liquidaciones y estadísticas |
+| **Profesionales Terapeutas** | Registro de sesiones, consulta de niños asignados, facturación personal y pagos |
 | **Familias** | (Próximamente) Portal para ver progreso y próximas sesiones |
 
 ### 💡 Casos de Uso Principales
 
 1. **Administrador registra un nuevo niño** con sus datos, obra social y asigna un profesional
 2. **Profesional accede desde su celular** y carga las sesiones realizadas durante el mes
-3. **Sistema calcula automáticamente** la facturación y comisión del profesional (25%)
-4. **Administrador genera liquidaciones** mensuales con un solo clic
-5. **Profesional visualiza** su facturación histórica y liquidaciones pendientes
+3. **Sistema calcula automáticamente** la facturación y comisión del profesional
+4. **Administrador genera liquidaciones** mensuales con filtros avanzados
+5. **Profesional registra pagos** a Espacio Desafíos y el administrador recibe notificación
 
 ### 🏥 Contexto de Uso
 
@@ -51,8 +51,6 @@ Ideal para:
 - Centros de rehabilitación infantil
 - Consultorios multidisciplinarios
 
-**Espacio Desafíos** es una aplicación web progresiva (PWA) diseñada para la gestión integral de clínicas terapéuticas. Permite administrar profesionales, niños/pacientes, sesiones de terapia, facturación y liquidaciones de manera eficiente y moderna.
-
 ---
 
 ## 📚 Guía Rápida de Uso
@@ -62,13 +60,16 @@ Ideal para:
 #### 1. Configuración Inicial (Solo Admin)
 ```
 1. Iniciar sesión como administrador
-2. Ir a "Valores" y configurar los 4 tipos de valores:
+2. Ir a "Más" > "Configuración de Valores" y configurar los 4 tipos:
    - Nomenclatura
    - Módulos
    - OSDE
    - Sesión Individual
 3. Ir a "Profesionales" y agregar los profesionales de la clínica
 4. Ir a "Niños" y registrar los niños asignando profesionales
+5. Configurar en cada profesional (Perfil de Liquidación):
+   - Módulos asignados
+   - Porcentajes de comisión personalizados
 ```
 
 #### 2. Uso Diario - Profesionales
@@ -77,16 +78,19 @@ Ideal para:
 2. Ver "Mis Niños" para consultar datos de pacientes asignados
 3. Ir a "Sesiones" al final del mes
 4. Seleccionar mes y año
-5. Cargar cantidad de sesiones por cada niño
+5. Cargar cantidad de sesiones por cada niño y módulo
 6. Guardar cambios
+7. Ir a "Facturacion" para ver resumen y registrar pagos
 ```
 
 #### 3. Proceso Mensual - Administrador
 ```
 1. Revisar sesiones cargadas por profesionales
 2. Ir a "Liquidaciones"
-3. Generar liquidación del mes para cada profesional
-4. Marcar como pagada una vez realizada la transferencia
+3. Seleccionar año, mes y profesionales a liquidar
+4. Calcular liquidaciones (automático basado en % configurado)
+5. Aprobar liquidaciones pendientes
+6. Marcar como pagadas una vez realizada la transferencia
 ```
 
 ---
@@ -162,6 +166,19 @@ Ejecuta el script SQL ubicado en `database/schema.sql` en el SQL Editor de Supab
 3. Copia y pega el contenido de `database/schema.sql`
 4. Ejecuta el script
 
+#### Tablas creadas:
+- `profiles` - Usuarios (admin/profesional)
+- `children` - Pacientes/niños
+- `children_professionals` - Relación muchos a muchos entre niños y profesionales
+- `monthly_sessions` - Sesiones mensuales
+- `module_values` - Valores de módulos
+- `liquidations` - Liquidaciones
+- `value_history` - Historial de valores
+- `expenses` - Gastos operativos
+- `professional_modules` - Configuración de módulos por profesional
+- `notifications` - Sistema de notificaciones
+- `payments_to_clinic` - Pagos de profesionales al centro
+
 #### 4.2 Insertar Datos Iniciales (Opcional)
 
 **Profesionales de ejemplo:**
@@ -205,9 +222,10 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
 1. Ve a `/login`
 2. Inicia sesión con el email admin que configuraste
-3. Configura los valores en la pestaña "Valores"
-4. Agrega profesionales desde "Profesionales" > "Nuevo Profesional"
-5. Registra niños desde "Niños" > "Nuevo Niño"
+3. Configura los valores en "Más" > "Configuración de Valores"
+4. Agrega profesionales desde "Profesionales"
+5. Registra niños desde "Niños"
+6. Configura módulos y porcentajes en el perfil de cada profesional
 
 ---
 
@@ -218,16 +236,17 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 #### 1. **profiles**
 ```sql
 CREATE TABLE profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id),
-  email TEXT NOT NULL,
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT UNIQUE NOT NULL,
   full_name TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('admin', 'professional')),
-  is_active BOOLEAN DEFAULT true,
   phone TEXT,
-  specialization TEXT,
+  role TEXT NOT NULL DEFAULT 'professional' CHECK (role IN ('admin', 'professional', 'assistant')),
+  specialty TEXT,
   license_number TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  hourly_rate DECIMAL(10, 2),
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 ```
 
@@ -236,31 +255,24 @@ CREATE TABLE profiles (
 CREATE TABLE children (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   full_name TEXT NOT NULL,
-  birth_date DATE NOT NULL,
-  cedula TEXT,
+  birth_date DATE,
+  document_number TEXT UNIQUE,
+  health_insurance TEXT,
+  affiliate_number TEXT,
+  diagnostic TEXT,
+  guardian_name TEXT NOT NULL,
+  guardian_phone TEXT,
+  guardian_email TEXT,
+  guardian_relationship TEXT,
+  secondary_contact_name TEXT,
+  secondary_contact_phone TEXT,
   address TEXT,
-  phone TEXT,
-  email TEXT,
-  mother_name TEXT,
-  mother_phone TEXT,
-  mother_email TEXT,
-  father_name TEXT,
-  father_phone TEXT,
-  father_email TEXT,
-  emergency_contact_name TEXT,
-  emergency_contact_phone TEXT,
-  school TEXT,
-  grade TEXT,
-  diagnosis TEXT,
-  referral_source TEXT,
-  referral_doctor TEXT,
-  therapy_start_date DATE,
-  observation_date DATE,
+  city TEXT DEFAULT 'Córdoba',
+  state TEXT DEFAULT 'Córdoba',
+  country TEXT DEFAULT 'Argentina',
   assigned_professional_id UUID REFERENCES profiles(id),
-  fee_value DECIMAL(10,2) NOT NULL DEFAULT 0,
   is_active BOOLEAN DEFAULT true,
-  discharge_date DATE,
-  discharge_reason TEXT,
+  notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -319,6 +331,59 @@ CREATE TABLE liquidations (
 );
 ```
 
+#### 6. **professional_modules** (NUEVA)
+```sql
+CREATE TABLE professional_modules (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  professional_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  value_type TEXT NOT NULL CHECK (value_type IN ('nomenclatura', 'modulos', 'osde', 'sesion')),
+  commission_percentage DECIMAL(5, 2) NOT NULL DEFAULT 25.00 CHECK (commission_percentage BETWEEN 0 AND 100),
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(professional_id, value_type)
+);
+```
+
+#### 7. **notifications** (NUEVA)
+```sql
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'info' CHECK (type IN ('info', 'warning', 'success', 'error')),
+  is_read BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### 8. **payments_to_clinic** (NUEVA)
+```sql
+CREATE TABLE payments_to_clinic (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  professional_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  year INTEGER NOT NULL,
+  month INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
+  payment_date DATE NOT NULL,
+  payment_type TEXT NOT NULL CHECK (payment_type IN ('efectivo', 'transferencia')),
+  amount DECIMAL(10, 2) NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### 9. **children_professionals** (NUEVA - Relación muchos a muchos)
+```sql
+CREATE TABLE children_professionals (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  child_id UUID NOT NULL REFERENCES children(id) ON DELETE CASCADE,
+  professional_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(child_id, professional_id)
+);
+```
+
 ### Módulos Predefinidos
 
 ```sql
@@ -353,16 +418,24 @@ espacio-desafios/
 │   │   │   └── layout.tsx
 │   │   ├── (dashboard)/ # Grupo de rutas del dashboard
 │   │   │   ├── admin/   # Rutas solo para administradores
-│   │   │   │   ├── page.tsx
-│   │   │   │   ├── ninos/
-│   │   │   │   ├── profesionales/
-│   │   │   │   ├── liquidaciones/
-│   │   │   │   └── valores/
+│   │   │   │   ├── page.tsx                    # Dashboard admin
+│   │   │   │   ├── configuracion/              # Configuración admin
+│   │   │   │   ├── consumos/                   # Panel de gastos
+│   │   │   │   ├── estadisticas/               # Estadísticas
+│   │   │   │   ├── liquidaciones/              # Liquidaciones
+│   │   │   │   ├── mas/                        # Menú "Más"
+│   │   │   │   ├── ninos/                      # Gestión de niños
+│   │   │   │   ├── notificaciones/             # Notificaciones admin
+│   │   │   │   ├── profesionales/              # Gestión de profesionales
+│   │   │   │   │   └── [id]/                   # Perfil detallado
+│   │   │   │   └── valores/                    # Configuración de valores
 │   │   │   ├── profesional/ # Rutas para profesionales
-│   │   │   │   ├── page.tsx
-│   │   │   │   ├── sesiones/
-│   │   │   │   ├── ninos/
-│   │   │   │   └── facturacion/
+│   │   │   │   ├── page.tsx                    # Dashboard profesional
+│   │   │   │   ├── configuracion/              # Configuración profesional
+│   │   │   │   ├── facturacion/                # Facturación y pagos
+│   │   │   │   ├── ninos/                      # Mis pacientes
+│   │   │   │   ├── notificaciones/             # Notificaciones profesional
+│   │   │   │   └── sesiones/                   # Carga de sesiones
 │   │   │   ├── layout.tsx
 │   │   │   └── page.tsx
 │   │   ├── api/        # API Routes
@@ -374,6 +447,7 @@ espacio-desafios/
 │   │   ├── auth/       # Componentes de autenticación
 │   │   ├── navigation/ # Navegación (header, bottom-nav)
 │   │   ├── professional/ # Componentes para profesionales
+│   │   │   └── session-row.tsx
 │   │   └── ui/         # Componentes UI reutilizables
 │   │       ├── badge.tsx
 │   │       ├── button.tsx
@@ -381,24 +455,21 @@ espacio-desafios/
 │   │       └── input.tsx
 │   ├── 📂 lib/
 │   │   ├── actions/    # Server Actions
-│   │   │   └── liquidations.ts
+│   │   │   ├── liquidations.ts
+│   │   │   ├── payments.ts
+│   │   │   ├── professionals.ts
+│   │   │   ├── statistics.ts
+│   │   │   └── values.ts
 │   │   ├── hooks/      # Custom React Hooks
-│   │   │   ├── use-auth.ts
-│   │   │   ├── use-children.ts
-│   │   │   └── use-sessions.ts
 │   │   ├── supabase/   # Cliente Supabase
-│   │   │   ├── client.ts
-│   │   │   ├── middleware.ts
-│   │   │   └── server.ts
 │   │   └── utils/      # Utilidades
-│   │       └── calculations.ts
 │   ├── 📂 types/
 │   │   └── index.ts    # Tipos TypeScript
 │   └── middleware.ts   # Middleware de autenticación
+├── 📄 database/
+│   └── schema.sql      # Esquema completo de BD
 ├── 📄 next.config.ts   # Configuración de Next.js + PWA
 ├── 📄 tsconfig.json    # Configuración TypeScript
-├── 📄 postcss.config.mjs
-├── 📄 tailwind.config.ts
 └── 📄 package.json
 ```
 
@@ -408,24 +479,84 @@ espacio-desafios/
 
 ### 🔑 Administrador (`admin`)
 
-| Funcionalidad | Descripción |
-|---------------|-------------|
-| 📊 **Dashboard** | Vista general con estadísticas de toda la clínica |
-| 👨‍⚕️ **Gestión de Profesionales** | Crear, editar, activar/desactivar profesionales |
-| 👶 **Gestión de Niños** | Registrar, editar, asignar profesionales, dar de alta/baja |
-| 💰 **Configuración de Valores** | Administrar valores de módulos terapéuticos |
-| 💵 **Liquidaciones** | Calcular y gestionar pagos a profesionales |
-| 📈 **Estadísticas** | Reportes de facturación y sesiones |
+| Funcionalidad | Estado | Descripción |
+|---------------|--------|-------------|
+| 📊 **Dashboard** | ✅ | Vista general con estadísticas de toda la clínica |
+| 👨‍⚕️ **Gestión de Profesionales** | ✅ | Crear, editar, activar/desactivar profesionales |
+| 👶 **Gestión de Niños** | ✅ | Registrar, editar, asignar profesionales, dar de alta/baja |
+| 💰 **Configuración de Valores** | ✅ | Administrar valores históricos (pasado, presente, futuro) |
+| 💵 **Liquidaciones** | ✅ | Calcular y gestionar pagos con filtros avanzados |
+| 📊 **Panel de Consumos** | ✅ | Registro de gastos operativos con resumen mensual |
+| 📈 **Estadísticas** | ✅ | Reportes visuales conectados a datos reales |
+| 🔔 **Notificaciones** | ✅ | Sistema de notificaciones con badge en header |
+| ⚙️ **Configuración** | ✅ | Perfil y logout |
+
+#### Flujo del Administrador:
+
+1. **Dashboard**: Vista general con estadísticas generales
+2. **Header**: Botones de Notificaciones (campana) y Configuración (tuerca) en la esquina superior derecha
+3. **Gestión de Profesionales**:
+   - **Listado**: Ordenamiento (Activos primero), WhatsApp directo, click en tarjeta para ver perfil
+   - **Edición**: Contraseña visible, datos del profesional, botón para eliminar/desactivar
+   - **Perfil de Liquidación**: 
+     - Asignación de pacientes vinculados
+     - Configuración Multi-Módulo (Nomenclatura, Módulos, OSDE, Sesión Individual)
+     - Porcentaje variable por tipo de módulo
+4. **Valores**: Historial mensual editable (añadir, editar, eliminar valores)
+5. **Liquidaciones**: Filtros por año, mes y profesional
+6. **Consumos**: Registro de gastos (Luz, Gas, Fotocopias, etc.) con balance mensual
+7. **Gestión de Niños**:
+   - **Listado**: Filtrado por profesional, click en "Editar" para abrir modal
+   - **Edición**: Modal con todos los campos, incluye botón para eliminar paciente
+
+---
 
 ### 👩‍⚕️ Profesional (`professional`)
 
-| Funcionalidad | Descripción |
-|---------------|-------------|
-| 📊 **Dashboard Personal** | Vista de sus sesiones y estadísticas |
-| 👶 **Mis Niños** | Ver niños asignados y sus datos |
-| 🗓️ **Registro de Sesiones** | Registrar sesiones mensuales por niño |
-| 💵 **Mi Facturación** | Ver historial de liquidaciones y comisiones |
-| 📱 **Acceso Móvil** | Optimizado para uso desde celular |
+| Funcionalidad | Estado | Descripción |
+|---------------|--------|-------------|
+| 📊 **Dashboard Personal** | ✅ | Vista de sesiones y estadísticas con CTA a Sesiones |
+| 👶 **Mis Niños** | ✅ | Ver niños asignados (sin diagnóstico), con Llamar y WhatsApp |
+| 🗓️ **Registro de Sesiones** | ✅ | Registrar sesiones por tipo de módulo y porcentaje |
+| 💵 **Mi Facturación** | ✅ | Ver historial, detalle por módulo, registrar pagos |
+| 🔔 **Notificaciones** | ✅ | Sistema de notificaciones con badge en header |
+| ⚙️ **Configuración** | ✅ | Perfil y logout |
+| 📱 **Acceso Móvil** | ✅ | Optimizado para uso desde celular |
+
+#### Flujo del Profesional:
+
+1. **Dashboard**:
+   - Card destacada: "¡Comienza a cargar tus sesiones!" → redirige a Sesiones
+   - Estadísticas del mes actual
+
+2. **Header**: 
+   - Botones de Notificaciones (campana) y Configuración (tuerca) en la esquina superior derecha
+   - Badge rojo con contador de notificaciones no leídas
+
+3. **Mis Niños**:
+   - Listado de pacientes asignados
+   - **Sin campo diagnóstico**
+   - Botones: **Llamar** (tel:) y **WhatsApp** (wa.me)
+   - Click en paciente: sin acción (por ahora)
+
+4. **Sesiones**:
+   - Filtros por año y mes
+   - **Entre nombre y "Mes anterior"**: Tipo de Módulo y Porcentaje (ej: "Psicomotricidad • 25%")
+   - Pacientes con múltiples módulos aparecen en filas separadas
+   - Botón "Guardar Sesiones" **centrado**
+   - Vista previa de facturación
+
+5. **Facturación**:
+   - **Resumen por tipo de módulo**:
+     - Cantidad de sesiones por módulo
+     - Valor del módulo
+     - Total facturado por módulo
+     - Comisión (%) y monto
+     - Neto por módulo
+   - **Pago a Espacio Desafíos**:
+     - Fecha, Tipo de pago (efectivo/transferencia), Importe
+     - Lista de pagos realizados
+     - Al guardar: notificación automática al administrador
 
 ---
 
@@ -456,23 +587,24 @@ espacio-desafios/
 --shadow-button: 0 4px 14px rgba(163, 142, 195, 0.3);
 ```
 
-### Componentes UI
+### Navegación
 
-#### Button
-- **Primary**: Fondo `#A38EC3`, texto blanco
-- **Secondary**: Fondo `#F4C2C2`, texto oscuro
-- **Ghost**: Transparente con borde
+#### Header (Esquina superior derecha):
+- 🔔 **Campana**: Notificaciones (badge rojo si hay no leídas)
+- ⚙️ **Tuerca**: Configuración
 
-#### Card
-- Fondo blanco
-- Bordes redondeados (`0.625rem`)
-- Sombra suave
-- Padding consistente
+#### Bottom Navigation (Admin):
+- 🏠 Inicio
+- 👨‍⚕️ Profs
+- 👶 Pacientes
+- 💵 Liquid
+- 📊 Más
 
-#### Input
-- Borde `#E8E5F0`
-- Fondo blanco
-- Focus ring en color primary
+#### Bottom Navigation (Profesional):
+- 🏠 Inicio
+- 👶 Pacientes
+- 📅 Sesiones
+- 🧾 Facturacion
 
 ---
 
@@ -487,22 +619,24 @@ total_amount = session_count × fee_value
 
 ### Cálculo de Comisiones
 
+Por defecto: Profesional recibe 75%, Clínica 25% (configurable por módulo)
+
 ```typescript
-// Por defecto: Profesional recibe 25%, Clínica 75%
-professional_amount = total_amount × 0.25
-clinic_amount = total_amount × 0.75
+// Comisión personalizable por profesional y tipo de módulo
+professional_amount = total_amount × (professional_percentage / 100)
+clinic_amount = total_amount - professional_amount
 ```
 
 ### Flujo de Trabajo
 
-1. **Admin registra un niño** con datos completos y profesional asignado
-2. **Profesional registra sesiones** mensualmente para cada niño
-3. **Sistema calcula automáticamente**:
-   - Total facturado por niño
-   - Comisión del profesional
-   - Total de sesiones del mes
-4. **Admin genera liquidaciones** mensuales por profesional
-5. **Profesional visualiza** su facturación y liquidaciones
+1. **Admin registra valores** para cada tipo de módulo
+2. **Admin configura profesional** con módulos y porcentajes personalizados
+3. **Admin registra niño** con profesional asignado
+4. **Profesional registra sesiones** mensualmente por niño y módulo
+5. **Sistema calcula automáticamente** la liquidación con los porcentajes configurados
+6. **Admin aprueba y marca como pagada** la liquidación
+7. **Profesional registra pagos** a Espacio Desafíos
+8. **Admin recibe notificación** de cada pago registrado
 
 ---
 
@@ -532,6 +666,10 @@ npm install
 1. Verifica que las variables de entorno estén correctas
 2. Asegúrate de que las políticas RLS estén configuradas
 3. Verifica que el proyecto Supabase esté activo
+
+### Error: "use server file can only export async functions"
+
+No importes funciones entre archivos 'use server'. Copia la función localmente o conviértela en un utility compartido sin 'use server'.
 
 ### PWA no se instala
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Users, Baby, Settings, DollarSign, Calendar, Receipt } from 'lucide-react';
+import { Home, Users, Baby, Settings, DollarSign, Calendar, Receipt, TrendingDown, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BottomNavProps {
@@ -12,15 +12,15 @@ const adminTabs = [
   { icon: Home, label: 'Inicio', href: '/admin' },
   { icon: Users, label: 'Profs', href: '/admin/profesionales' },
   { icon: Baby, label: 'Pacientes', href: '/admin/ninos' },
-  { icon: Settings, label: 'Valores', href: '/admin/valores' },
   { icon: DollarSign, label: 'Liquid', href: '/admin/liquidaciones' },
+  { icon: BarChart3, label: 'Más', href: '/admin/mas' },
 ];
 
 const professionalTabs = [
   { icon: Home, label: 'Inicio', href: '/profesional' },
   { icon: Baby, label: 'Pacientes', href: '/profesional/ninos' },
   { icon: Calendar, label: 'Sesiones', href: '/profesional/sesiones' },
-  { icon: Receipt, label: 'Factura', href: '/profesional/facturacion' },
+  { icon: Receipt, label: 'Facturacion', href: '/profesional/facturacion' },
 ];
 
 export function BottomNav({ userRole }: BottomNavProps) {

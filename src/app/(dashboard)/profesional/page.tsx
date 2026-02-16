@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { MonthlySummary } from '@/components/professional/monthly-summary'
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,7 @@ import {
   Percent,
   Plus,
   AlertCircle,
+  ArrowRight,
 } from 'lucide-react'
 
 export default async function ProfessionalDashboardPage() {
@@ -38,13 +40,23 @@ export default async function ProfessionalDashboardPage() {
   const currentMonth = currentDate.getMonth() + 1
   const currentYear = currentDate.getFullYear()
 
-  const { data: assignedChildren } = await supabase
-    .from('children')
-    .select('*')
-    .eq('assigned_professional_id', user.id)
-    .eq('is_active', true)
+  const [directChildrenResult, relationChildrenResult] = await Promise.all([
+    supabase
+      .from('children')
+      .select('id')
+      .eq('assigned_professional_id', user.id)
+      .eq('is_active', true),
+    supabase
+      .from('children_professionals')
+      .select('child_id')
+      .eq('professional_id', user.id)
+  ])
 
-  const childrenCount = assignedChildren?.length || 0
+  const directChildrenIds = directChildrenResult.data?.map(c => c.id) || []
+  const relationChildrenIds = relationChildrenResult.data?.map(c => c.child_id) || []
+  const allChildrenIds = [...new Set([...directChildrenIds, ...relationChildrenIds])]
+
+  const childrenCount = allChildrenIds.length
 
   const { data: monthlySessions } = await supabase
     .from('monthly_sessions')
@@ -112,6 +124,28 @@ export default async function ProfessionalDashboardPage() {
         </Card>
       </div>
 
+      {/* CTA Principal */}
+      <Card className="bg-gradient-to-r from-[#A38EC3] to-[#B8A5D3] text-white">
+        <div className="text-center py-2">
+          <h3 className="text-lg font-semibold mb-2">
+            ¡Comienza a cargar tus sesiones!
+          </h3>
+          <p className="text-sm text-white/80 mb-4">
+            Registra las sesiones realizadas este mes para mantener tu facturación actualizada
+          </p>
+          <Link href="/profesional/sesiones">
+            <Button 
+              variant="secondary" 
+              className="bg-white text-[#A38EC3] hover:bg-white/90 w-full sm:w-auto"
+            >
+              <Plus size={18} className="mr-2" />
+              Cargar Sesiones
+              <ArrowRight size={18} className="ml-2" />
+            </Button>
+          </Link>
+        </div>
+      </Card>
+
       <MonthlySummary
         sessions={monthlySessions || []}
         moduleValue={moduleValue}
@@ -124,14 +158,18 @@ export default async function ProfessionalDashboardPage() {
             Acciones Rápidas
           </h3>
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button variant="primary" className="w-full sm:w-auto">
-              <Plus size={18} className="mr-2" />
-              Cargar Sesiones
-            </Button>
-            <Button variant="secondary" className="w-full sm:w-auto">
-              <Baby size={18} className="mr-2" />
-              Ver Mis Pacientes
-            </Button>
+            <Link href="/profesional/sesiones" className="w-full sm:w-auto">
+              <Button variant="primary" className="w-full">
+                <Plus size={18} className="mr-2" />
+                Cargar Sesiones
+              </Button>
+            </Link>
+            <Link href="/profesional/ninos" className="w-full sm:w-auto">
+              <Button variant="secondary" className="w-full">
+                <Baby size={18} className="mr-2" />
+                Ver Mis Pacientes
+              </Button>
+            </Link>
           </div>
         </div>
       </Card>
@@ -148,9 +186,11 @@ export default async function ProfessionalDashboardPage() {
                 Recuerda cargar las sesiones realizadas para mantener tu facturación actualizada.
               </p>
             </div>
-            <Button variant="primary" size="sm" className="w-full sm:w-auto mt-2 sm:mt-0">
-              Cargar Sesiones Ahora
-            </Button>
+            <Link href="/profesional/sesiones" className="w-full sm:w-auto mt-2 sm:mt-0">
+              <Button variant="primary" size="sm" className="w-full">
+                Cargar Sesiones Ahora
+              </Button>
+            </Link>
           </div>
         </Card>
       )}

@@ -53,27 +53,57 @@ export function useChildren(professionalId?: string): UseChildrenReturn {
     setError(null);
 
     try {
-      let query = supabase
-        .from('children')
-        .select(`
-          *,
-          professional:profiles(full_name, email)
-        `)
-        .eq('is_active', true)
-        .order('full_name', { ascending: true });
+      let childrenData: Child[] = [];
 
-      // Filter by professional if provided
       if (professionalId) {
-        query = query.eq('assigned_professional_id', professionalId);
+        const [directResult, relationResult] = await Promise.all([
+          supabase
+            .from('children')
+            .select(`*, professional:profiles(full_name, email)`)
+            .eq('assigned_professional_id', professionalId)
+            .eq('is_active', true)
+            .order('full_name', { ascending: true }),
+          supabase
+            .from('children_professionals')
+            .select('child_id')
+            .eq('professional_id', professionalId)
+        ]);
+
+        const directChildren = directResult.data || [];
+        
+        const relationChildIds = relationResult.data?.map(r => r.child_id) || [];
+        let relationChildren: Child[] = [];
+        
+        if (relationChildIds.length > 0) {
+          const relationResult2 = await supabase
+            .from('children')
+            .select(`*, professional:profiles(full_name, email)`)
+            .in('id', relationChildIds)
+            .eq('is_active', true);
+          relationChildren = relationResult2.data || [];
+        }
+
+        const map = new Map<string, Child>();
+        for (const child of [...directChildren, ...relationChildren]) {
+          if (!map.has(child.id)) {
+            map.set(child.id, child);
+          }
+        }
+        childrenData = Array.from(map.values());
+      } else {
+        const { data, error: fetchError } = await supabase
+          .from('children')
+          .select(`*, professional:profiles(full_name, email)`)
+          .eq('is_active', true)
+          .order('full_name', { ascending: true });
+
+        if (fetchError) {
+          throw fetchError;
+        }
+        childrenData = data || [];
       }
 
-      const { data, error: fetchError } = await query;
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      setChildren(data || []);
+      setChildren(childrenData);
     } catch (err) {
       console.error('Error fetching children:', err);
       setError(

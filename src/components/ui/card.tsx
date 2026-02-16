@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { ReactNode, type MouseEventHandler } from 'react'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
@@ -11,6 +11,7 @@ interface CardProps {
   children: ReactNode
   className?: string
   variant?: 'default' | 'soft'
+  onClick?: MouseEventHandler<HTMLDivElement>
 }
 
 const variantStyles = {
@@ -22,9 +23,11 @@ export function Card({
   children,
   className = '',
   variant = 'default',
+  onClick,
 }: CardProps) {
   return (
     <div
+      onClick={onClick}
       className={cn(
         'rounded-2xl sm:rounded-3xl p-4 sm:p-6',
         variantStyles[variant],

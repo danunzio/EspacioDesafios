@@ -90,6 +90,9 @@ CREATE TABLE liquidations (
   month INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
   total_sessions INTEGER NOT NULL DEFAULT 0,
   total_amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
+  professional_percentage DECIMAL(5, 2) NOT NULL DEFAULT 25.00,
+  professional_amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
+  clinic_amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
   module_breakdown JSONB DEFAULT '[]',
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'paid', 'cancelled')),
   approved_at TIMESTAMPTZ,
@@ -529,3 +532,257 @@ JOIN profiles p ON l.professional_id = p.id
 LEFT JOIN commission_payments cp ON l.id = cp.liquidation_id
 GROUP BY l.id, l.year, l.month, p.full_name, l.total_sessions, l.total_amount, l.status, l.approved_at, l.paid_at
 ORDER BY l.year DESC, l.month DESC, p.full_name;
+
+-- =====================================================
+-- NEW TABLES FOR VALUES AND EXPENSES
+-- =====================================================
+
+-- Value history table (for tracking historical and future values)
+CREATE TABLE value_history (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  value_type TEXT NOT NULL CHECK (value_type IN ('nomenclatura', 'modulos', 'osde', 'sesion')),
+  year INTEGER NOT NULL,
+  month INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
+  value DECIMAL(10, 2) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(value_type, year, month)
+);
+
+-- Expenses table (for operational costs)
+CREATE TABLE expenses (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  year INTEGER NOT NULL,
+  month INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
+  category TEXT NOT NULL,
+  description TEXT,
+  amount DECIMAL(10, 2) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for new tables
+CREATE INDEX idx_value_history_type ON value_history(value_type);
+CREATE INDEX idx_value_history_year_month ON value_history(year, month);
+CREATE INDEX idx_expenses_year_month ON expenses(year, month);
+CREATE INDEX idx_expenses_category ON expenses(category);
+
+-- Enable RLS on new tables
+ALTER TABLE value_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
+
+-- RLS policies for value_history
+CREATE POLICY "All authenticated users can view value history"
+  ON value_history FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Admins can manage value history"
+  ON value_history FOR ALL
+  TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+  ));
+
+-- RLS policies for expenses
+CREATE POLICY "All authenticated users can view expenses"
+  ON expenses FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Admins can manage expenses"
+  ON expenses FOR ALL
+  TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+  ));
+
+-- Triggers for new tables
+CREATE TRIGGER update_value_history_updated_at
+  BEFORE UPDATE ON value_history
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_expenses_updated_at
+  BEFORE UPDATE ON expenses
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Audit triggers for new tables
+CREATE TRIGGER audit_value_history
+  AFTER INSERT OR UPDATE OR DELETE ON value_history
+  FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+CREATE TRIGGER audit_expenses
+  AFTER INSERT OR UPDATE OR DELETE ON expenses
+  FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+-- =====================================================
+-- PROFESSIONAL MODULES CONFIGURATION TABLE
+-- =====================================================
+
+-- Table for storing professional-specific module configurations
+CREATE TABLE professional_modules (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  professional_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  value_type TEXT NOT NULL CHECK (value_type IN ('nomenclatura', 'modulos', 'osde', 'sesion')),
+  commission_percentage DECIMAL(5, 2) NOT NULL DEFAULT 25.00 CHECK (commission_percentage BETWEEN 0 AND 100),
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(professional_id, value_type)
+);
+
+-- Indexes for professional_modules
+CREATE INDEX idx_professional_modules_professional ON professional_modules(professional_id);
+CREATE INDEX idx_professional_modules_type ON professional_modules(value_type);
+
+-- Enable RLS on professional_modules
+ALTER TABLE professional_modules ENABLE ROW LEVEL SECURITY;
+
+-- RLS policies for professional_modules
+CREATE POLICY "All authenticated users can view professional modules"
+  ON professional_modules FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Admins can manage professional modules"
+  ON professional_modules FOR ALL
+  TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+  ));
+
+-- Trigger for professional_modules
+CREATE TRIGGER update_professional_modules_updated_at
+  BEFORE UPDATE ON professional_modules
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Audit trigger for professional_modules
+CREATE TRIGGER audit_professional_modules
+  AFTER INSERT OR UPDATE OR DELETE ON professional_modules
+  FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+
+-- =====================================================
+-- NOTIFICATIONS TABLE
+-- =====================================================
+
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'info' CHECK (type IN ('info', 'warning', 'success', 'error')),
+  is_read BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for notifications
+CREATE INDEX idx_notifications_user ON notifications(user_id);
+CREATE INDEX idx_notifications_unread ON notifications(user_id, is_read);
+CREATE INDEX idx_notifications_created ON notifications(created_at DESC);
+
+-- Enable RLS on notifications
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+-- RLS policies for notifications
+CREATE POLICY "Users can view own notifications"
+  ON notifications FOR SELECT
+  TO authenticated
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Users can update own notifications"
+  ON notifications FOR UPDATE
+  TO authenticated
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Admins can create notifications"
+  ON notifications FOR INSERT
+  TO authenticated
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM profiles WHERE id = auth.uid() AND role IN ('admin', 'professional')
+  ));
+
+-- =====================================================
+-- PAYMENTS TO CLINIC TABLE
+-- =====================================================
+
+CREATE TABLE payments_to_clinic (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  professional_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  year INTEGER NOT NULL,
+  month INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
+  payment_date DATE NOT NULL,
+  payment_type TEXT NOT NULL CHECK (payment_type IN ('efectivo', 'transferencia')),
+  amount DECIMAL(10, 2) NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for payments_to_clinic
+CREATE INDEX idx_payments_clinic_professional ON payments_to_clinic(professional_id);
+CREATE INDEX idx_payments_clinic_year_month ON payments_to_clinic(year, month);
+CREATE INDEX idx_payments_clinic_date ON payments_to_clinic(payment_date);
+
+-- Enable RLS on payments_to_clinic
+ALTER TABLE payments_to_clinic ENABLE ROW LEVEL SECURITY;
+
+-- RLS policies for payments_to_clinic
+CREATE POLICY "Professionals can view own payments"
+  ON payments_to_clinic FOR SELECT
+  TO authenticated
+  USING (professional_id = auth.uid());
+
+CREATE POLICY "Admins can view all payments"
+  ON payments_to_clinic FOR SELECT
+  TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+  ));
+
+CREATE POLICY "Professionals can create own payments"
+  ON payments_to_clinic FOR INSERT
+  TO authenticated
+  WITH CHECK (professional_id = auth.uid());
+
+CREATE POLICY "Admins can manage all payments"
+  ON payments_to_clinic FOR ALL
+  TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+  ));
+
+-- =====================================================
+-- CHILDREN PROFESSIONALS (MANY-TO-MANY RELATIONSHIP)
+-- =====================================================
+
+CREATE TABLE children_professionals (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  child_id UUID NOT NULL REFERENCES children(id) ON DELETE CASCADE,
+  professional_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(child_id, professional_id)
+);
+
+-- Indexes for children_professionals
+CREATE INDEX idx_children_professionals_child ON children_professionals(child_id);
+CREATE INDEX idx_children_professionals_professional ON children_professionals(professional_id);
+
+-- Enable RLS on children_professionals
+ALTER TABLE children_professionals ENABLE ROW LEVEL SECURITY;
+
+-- RLS policies for children_professionals
+CREATE POLICY "All authenticated users can view children_professionals"
+  ON children_professionals FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Admins can manage children_professionals"
+  ON children_professionals FOR ALL
+  TO authenticated
+  USING (EXISTS (
+    SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
+  ));
+
+CREATE POLICY "Professionals can view assigned children"
+  ON children_professionals FOR SELECT
+  TO authenticated
+  USING (professional_id = auth.uid());

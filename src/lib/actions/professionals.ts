@@ -343,20 +343,37 @@ export async function deleteProfessional(
       throw new Error('No tiene permisos para realizar esta acción')
     }
 
-    // Check if professional has assigned children
-    const { data: assignedChildren, error: childrenError } = await supabase
-      .from('children')
-      .select('id')
-      .eq('assigned_professional_id', id)
-      .eq('is_active', true)
+    // Check if professional has assigned children (both direct and relation)
+    const [directResult, relationResult] = await Promise.all([
+      supabase
+        .from('children')
+        .select('id')
+        .eq('assigned_professional_id', id)
+        .eq('is_active', true),
+      supabase
+        .from('children_professionals')
+        .select('child_id')
+        .eq('professional_id', id)
+    ])
 
-    if (childrenError) {
-      throw new Error(`Error al verificar niños asignados: ${childrenError.message}`)
+    const directChildren = directResult.data || [];
+    const relationChildIds = relationResult.data?.map(r => r.child_id) || [];
+    
+    let relationChildren: any[] = [];
+    if (relationChildIds.length > 0) {
+      const relationResult2 = await supabase
+        .from('children')
+        .select('id')
+        .in('id', relationChildIds)
+        .eq('is_active', true);
+      relationChildren = relationResult2.data || [];
     }
 
-    if (assignedChildren && assignedChildren.length > 0) {
+    const allAssignedChildren = [...directChildren, ...relationChildren];
+
+    if (allAssignedChildren.length > 0) {
       throw new Error(
-        `No se puede desactivar el profesional porque tiene ${assignedChildren.length} niño(s) asignado(s). ` +
+        `No se puede desactivar el profesional porque tiene ${allAssignedChildren.length} niño(s) asignado(s). ` +
         'Por favor, reasigne los niños a otro profesional primero.'
       )
     }
@@ -456,16 +473,38 @@ export async function getProfessionalStats(
   try {
     const supabase = await createClient()
 
-    // Get assigned children count
-    const { count: childrenCount, error: childrenError } = await supabase
-      .from('children')
-      .select('*', { count: 'exact', head: true })
-      .eq('assigned_professional_id', professionalId)
-      .eq('is_active', true)
+    // Get assigned children count from both sources
+    const [directResult, relationResult] = await Promise.all([
+      supabase
+        .from('children')
+        .select('id', { count: 'exact', head: true })
+        .eq('assigned_professional_id', professionalId)
+        .eq('is_active', true),
+      supabase
+        .from('children_professionals')
+        .select('child_id', { count: 'exact', head: true })
+        .eq('professional_id', professionalId)
+    ])
 
-    if (childrenError) {
-      throw new Error(`Error fetching children count: ${childrenError.message}`)
+    const directCount = directResult.count || 0;
+    const relationCount = relationResult.count || 0;
+    
+    let relationChildIds: string[] = [];
+    if (relationResult.data) {
+      relationChildIds = relationResult.data.map(r => r.child_id);
     }
+
+    let relationChildrenCount = 0;
+    if (relationChildIds.length > 0) {
+      const relationChildrenResult = await supabase
+        .from('children')
+        .select('id', { count: 'exact', head: true })
+        .in('id', relationChildIds)
+        .eq('is_active', true);
+      relationChildrenCount = relationChildrenResult.count || 0;
+    }
+
+    const childrenCount = directCount + relationChildrenCount;
 
     // Get session statistics for current month
     const currentDate = new Date()

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,85 +14,309 @@ import {
   Users,
   AlertCircle,
   CheckCircle,
+  Loader2,
 } from 'lucide-react';
 import { MONTH_NAMES } from '@/types';
 import { formatCurrency } from '@/lib/utils/calculations';
 import { SessionRow } from '@/components/professional/session-row';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 interface Child {
   id: string;
   full_name: string;
+  modules: string[];
 }
 
 interface SessionData {
   child_id: string;
+  module_type: string;
   session_count: number;
   previous_month_count: number;
 }
 
-// Mock data - replace with actual data fetching
-const mockMyChildren: Child[] = [
-  { id: '1', full_name: 'Juan Pérez García' },
-  { id: '2', full_name: 'Sofia Martínez' },
-  { id: '3', full_name: 'Lucas Fernández' },
-  { id: '4', full_name: 'Valentina Silva' },
-];
-
-const mockPreviousSessions: Record<string, number> = {
-  '1': 8,
-  '2': 6,
-  '3': 10,
-  '4': 4,
-};
-
-const mockModuleValue = 45000;
+interface ModuleValue {
+  module_name: string;
+  base_value: number;
+}
 
 export default function ProfessionalSessionsPage() {
+  const supabase = createClient();
+  const { user, profile, loading: authLoading } = useAuth();
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
-  const [sessions, setSessions] = useState<SessionData[]>(
-    mockMyChildren.map((child) => ({
-      child_id: child.id,
-      session_count: 0,
-      previous_month_count: mockPreviousSessions[child.id] || 0,
-    }))
-  );
+  const [sessions, setSessions] = useState<SessionData[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [children, setChildren] = useState<Child[]>([]);
+  const [moduleValues, setModuleValues] = useState<ModuleValue[]>([]);
 
   const years = useMemo(() => {
     const currentYear = new Date().getFullYear();
     return Array.from({ length: 3 }, (_, i) => currentYear - 1 + i);
   }, []);
 
-  const handleSessionChange = (childId: string, count: number) => {
+  useEffect(() => {
+    let isMounted = true;
+    
+    async function fetchData() {
+      if (authLoading || !user || !profile) {
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        const childrenFromDirectAssignment = await supabase
+          .from('children')
+          .select('id, full_name')
+          .eq('assigned_professional_id', user.id)
+          .eq('is_active', true);
+
+        if (!isMounted) return;
+
+        if (childrenFromDirectAssignment.error) {
+          throw childrenFromDirectAssignment.error;
+        }
+
+        const childrenFromRelation = await supabase
+          .from('children_professionals')
+          .select('child_id')
+          .eq('professional_id', user.id);
+
+        if (!isMounted) return;
+
+        if (childrenFromRelation.error) {
+          throw childrenFromRelation.error;
+        }
+
+        const relatedChildIds = (childrenFromRelation.data || []).map(item => item.child_id);
+        
+        let relatedChildren: any[] = [];
+        if (relatedChildIds.length > 0) {
+          const childrenResponse = await supabase
+            .from('children')
+            .select('id, full_name')
+            .in('id', relatedChildIds)
+            .eq('is_active', true);
+          
+          if (!isMounted) return;
+          
+          if (!childrenResponse.error) {
+            relatedChildren = childrenResponse.data || [];
+          }
+        }
+
+        const allChildren = [...(childrenFromDirectAssignment.data || []), ...relatedChildren];
+        
+        const uniqueChildrenMap = new Map();
+        allChildren.forEach((child: any) => {
+          if (!uniqueChildrenMap.has(child.id)) {
+            uniqueChildrenMap.set(child.id, child);
+          }
+        });
+
+        const childrenData = Array.from(uniqueChildrenMap.values());
+
+        const moduleValuesResponse = await supabase
+          .from('module_values')
+          .select('module_name, base_value')
+          .eq('is_active', true);
+
+        if (moduleValuesResponse.error) {
+          throw moduleValuesResponse.error;
+        }
+
+        const modulesData = moduleValuesResponse.data || [];
+        setModuleValues(modulesData);
+
+        const currentMonth = month;
+        const currentYear = year;
+        const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+        const previousYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+
+        const currentSessionsResponse = await supabase
+          .from('monthly_sessions')
+          .select('child_id, module_name, session_count')
+          .eq('professional_id', user.id)
+          .eq('year', currentYear)
+          .eq('month', currentMonth);
+
+        if (currentSessionsResponse.error) {
+          throw currentSessionsResponse.error;
+        }
+
+        const currentSessionsData = currentSessionsResponse.data || [];
+
+        const previousSessionsResponse = await supabase
+          .from('monthly_sessions')
+          .select('child_id, module_name, session_count')
+          .eq('professional_id', user.id)
+          .eq('year', previousYear)
+          .eq('month', previousMonth);
+
+        if (previousSessionsResponse.error) {
+          throw previousSessionsResponse.error;
+        }
+
+        const previousSessionsData = previousSessionsResponse.data || [];
+
+        const previousSessionsMap: Record<string, number> = {};
+        previousSessionsData.forEach((s) => {
+          const key = `${s.child_id}-${s.module_name}`;
+          previousSessionsMap[key] = s.session_count;
+        });
+
+        const currentSessionsMap: Record<string, number> = {};
+        currentSessionsData.forEach((s) => {
+          const key = `${s.child_id}-${s.module_name}`;
+          currentSessionsMap[key] = s.session_count;
+        });
+
+        const childrenWithModules: Child[] = childrenData.map((child) => {
+          const childCurrentSessions = currentSessionsData.filter(
+            (s) => s.child_id === child.id
+          );
+
+          let modules: string[];
+          if (childCurrentSessions.length > 0) {
+            modules = childCurrentSessions.map((s) => s.module_name);
+          } else {
+            modules = modulesData.map((m) => m.module_name);
+          }
+
+          return {
+            id: child.id,
+            full_name: child.full_name,
+            modules,
+          };
+        });
+
+        setChildren(childrenWithModules);
+
+        const sessionsData: SessionData[] = [];
+        childrenWithModules.forEach((child) => {
+          child.modules.forEach((module) => {
+            const key = `${child.id}-${module}`;
+            sessionsData.push({
+              child_id: child.id,
+              module_type: module,
+              session_count: currentSessionsMap[key] || 0,
+              previous_month_count: previousSessionsMap[key] || 0,
+            });
+          });
+        });
+
+        setSessions(sessionsData);
+      } catch (error) {
+        if (!isMounted) return;
+        
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isAbortError = 
+          (error instanceof Error && error.name === 'AbortError') ||
+          errorMessage.includes('aborted') ||
+          errorMessage.includes('abort');
+        
+        if (isAbortError) {
+          return;
+        }
+        
+        console.error('Error fetching data:', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    fetchData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, profile, authLoading, year, month, supabase]);
+
+  const handleSessionChange = (childId: string, moduleType: string, count: number) => {
     setSessions((prev) =>
       prev.map((s) =>
-        s.child_id === childId ? { ...s, session_count: count } : s
+        s.child_id === childId && s.module_type === moduleType
+          ? { ...s, session_count: count }
+          : s
       )
     );
     setSaveSuccess(false);
   };
 
   const handleSave = async () => {
+    if (!user) return;
+
     setIsSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSaving(false);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+    setSaveSuccess(false);
+
+    try {
+      const sessionsToUpsert = sessions
+        .filter((s) => s.session_count > 0)
+        .map((s) => ({
+          professional_id: user.id,
+          year,
+          month,
+          child_id: s.child_id,
+          module_name: s.module_type,
+          session_count: s.session_count,
+          individual_sessions: s.session_count,
+          group_sessions: 0,
+          is_confirmed: false,
+        }));
+
+      if (sessionsToUpsert.length === 0) {
+        throw new Error('No hay sesiones para guardar');
+      }
+
+      const { error: upsertError } = await supabase
+        .from('monthly_sessions')
+        .upsert(sessionsToUpsert, {
+          onConflict: 'professional_id,child_id,year,month,module_name',
+          ignoreDuplicates: false,
+        });
+
+      if (upsertError) {
+        throw upsertError;
+      }
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error saving sessions:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const getChildName = (childId: string) => {
+    return children.find((c) => c.id === childId)?.full_name || 'Paciente';
+  };
+
+  const getModuleValue = (moduleName: string) => {
+    const module = moduleValues.find((m) => m.module_name === moduleName);
+    return module?.base_value || 0;
   };
 
   const totalSessions = sessions.reduce((acc, s) => acc + s.session_count, 0);
-  const estimatedBilling = totalSessions * mockModuleValue;
+  const estimatedBilling = sessions.reduce((acc, s) => {
+    return acc + (s.session_count * getModuleValue(s.module_type));
+  }, 0);
   const commission = estimatedBilling * 0.25;
   const netAmount = estimatedBilling - commission;
 
   const hasChanges = sessions.some((s) => s.session_count > 0);
 
-  const getChildName = (childId: string) => {
-    return mockMyChildren.find((c) => c.id === childId)?.full_name || 'Paciente';
-  };
+  if (authLoading || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="animate-spin text-[#A38EC3]" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -154,20 +379,30 @@ export default function ProfessionalSessionsPage() {
             </h3>
           </div>
           <Badge variant="default">
-            {mockMyChildren.length} pacientes asignados
+            {children.length} pacientes asignados
           </Badge>
         </div>
 
         <div className="space-y-3">
-          {sessions.map((session) => (
-            <SessionRow
-              key={session.child_id}
-              childName={getChildName(session.child_id)}
-              sessionCount={session.session_count}
-              previousMonthCount={session.previous_month_count}
-              onChange={(count) => handleSessionChange(session.child_id, count)}
-            />
-          ))}
+          {sessions.length === 0 ? (
+            <div className="text-center py-8 text-[#6B6570]">
+              <Users className="mx-auto mb-2 text-gray-300" size={40} />
+              <p>No tienes pacientes asignados actualmente.</p>
+              <p className="text-sm mt-1">Contacta a administración para asignar pacientes.</p>
+            </div>
+          ) : (
+            sessions.map((session, index) => (
+              <SessionRow
+                key={`${session.child_id}-${session.module_type}`}
+                childName={getChildName(session.child_id)}
+                moduleType={session.module_type}
+                commissionPercentage={25}
+                sessionCount={session.session_count}
+                previousMonthCount={session.previous_month_count}
+                onChange={(count) => handleSessionChange(session.child_id, session.module_type, count)}
+              />
+            ))
+          )}
         </div>
 
         {saveSuccess && (
@@ -177,11 +412,12 @@ export default function ProfessionalSessionsPage() {
           </div>
         )}
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex justify-center">
           <Button
             variant="primary"
             onClick={handleSave}
             disabled={!hasChanges || isSaving}
+            className="min-w-[200px]"
           >
             <Save size={18} className="mr-2" />
             {isSaving ? 'Guardando...' : 'Guardar Sesiones'}
@@ -198,7 +434,7 @@ export default function ProfessionalSessionsPage() {
             </h3>
           </div>
 
-<div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="bg-white/50 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Calendar className="text-[#A38EC3]" size={16} />
@@ -213,11 +449,15 @@ export default function ProfessionalSessionsPage() {
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="text-[#A38EC3]" size={16} />
                 <span className="text-sm font-medium text-[#6B6570]">
-                  Valor Módulo
+                  Valor Módulo Promedio
                 </span>
               </div>
               <p className="text-2xl font-bold text-[#2D2A32]">
-                {formatCurrency(mockModuleValue)}
+                {formatCurrency(
+                  moduleValues.length > 0
+                    ? moduleValues.reduce((acc, m) => acc + m.base_value, 0) / moduleValues.length
+                    : 0
+                )}
               </p>
             </div>
 

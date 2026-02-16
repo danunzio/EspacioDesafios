@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,6 @@ import {
   Baby,
   Plus,
   Pencil,
-  Trash2,
   Search,
   Filter,
   Users,
@@ -19,18 +18,23 @@ import {
   Calendar,
   Shield,
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
-interface ChildWithProfessional {
+interface Child {
   id: string;
   full_name: string;
-  birth_date: string;
+  birth_date: string | null;
   guardian_name: string;
   guardian_phone: string;
   guardian_email: string;
-  assigned_professional_id: string | null;
-  professional_name: string | null;
   health_insurance: string;
+  assigned_professional_id: string | null;
   is_active: boolean;
+}
+
+interface ChildWithProfessional extends Child {
+  assigned_professional_ids: string[];
+  professional_names: string[];
 }
 
 interface Professional {
@@ -61,7 +65,67 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
   const [children, setChildren] = useState<ChildWithProfessional[]>(initialChildren);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedChild, setSelectedChild] = useState<ChildWithProfessional | null>(null);
+  const [selectedChild, setSelectedChild] = useState<Child | null>(null);
+  const [allProfessionals, setAllProfessionals] = useState<Professional[]>(professionals);
+
+  const supabase = createClient();
+
+  // Fetch children with their professionals
+  const fetchChildrenWithProfessionals = useCallback(async () => {
+    try {
+      const { data: childrenData, error: childrenError } = await supabase
+        .from('children')
+        .select(`
+          *,
+          children_professionals(professional_id)
+        `)
+        .order('full_name');
+
+      if (childrenError) throw childrenError;
+
+      // Get all professional IDs
+      const allProfIds = new Set<string>();
+      childrenData?.forEach(child => {
+        child.children_professionals?.forEach((cp: { professional_id: string }) => {
+          allProfIds.add(cp.professional_id);
+        });
+        if (child.assigned_professional_id) {
+          allProfIds.add(child.assigned_professional_id);
+        }
+      });
+
+      // Fetch professional names
+      const { data: profsData } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', Array.from(allProfIds));
+
+      const profMap = new Map(profsData?.map(p => [p.id, p.full_name]) || []);
+
+      // Transform data
+      const transformedChildren = childrenData?.map(child => {
+        const profIds = child.children_professionals?.map((cp: { professional_id: string }) => cp.professional_id) || [];
+        // Add primary professional if not in the list
+        if (child.assigned_professional_id && !profIds.includes(child.assigned_professional_id)) {
+          profIds.push(child.assigned_professional_id);
+        }
+        
+        return {
+          ...child,
+          assigned_professional_ids: profIds,
+          professional_names: profIds.map((id: string) => profMap.get(id) || 'Desconocido'),
+        };
+      }) || [];
+
+      setChildren(transformedChildren);
+    } catch (error) {
+      console.error('Error fetching children:', error);
+    }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchChildrenWithProfessionals();
+  }, [fetchChildrenWithProfessionals]);
 
   const filteredChildren = useMemo(() => {
     return children.filter((child) => {
@@ -70,7 +134,7 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
         child.guardian_name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesProfessional =
         selectedProfessional === 'all' ||
-        child.assigned_professional_id === selectedProfessional;
+        child.assigned_professional_ids.includes(selectedProfessional);
       return matchesSearch && matchesProfessional;
     });
   }, [children, searchQuery, selectedProfessional]);
@@ -87,6 +151,7 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
   };
 
   const handleSuccess = () => {
+    fetchChildrenWithProfessionals();
     window.location.reload();
   };
 
@@ -134,7 +199,7 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
               className="flex-1 px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none bg-white"
             >
               <option value="all">Todos los profesionales</option>
-              {professionals.map((prof) => (
+              {allProfessionals.map((prof) => (
                 <option key={prof.id} value={prof.id}>
                   {prof.full_name}
                 </option>
@@ -150,22 +215,36 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
           {filteredChildren.map((child) => (
             <Card
               key={child.id}
-              className="p-4 hover:shadow-lg transition-shadow"
+              className="p-4 hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => handleEdit(child)}
             >
               <div className="flex flex-col gap-3">
-                {/* Info del paciente */}
                 <div className="flex items-start gap-3">
                   <div className="w-12 h-12 rounded-full bg-[#A38EC3]/15 flex items-center justify-center flex-shrink-0">
                     <Baby className="text-[#A38EC3]" size={24} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-[#2D2A32] text-base">
-                        {child.full_name}
-                      </h3>
-                      <Badge variant={child.is_active ? 'success' : 'default'} className="text-xs">
-                        {child.is_active ? 'Activo' : 'Inactivo'}
-                      </Badge>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-[#2D2A32] text-base">
+                          {child.full_name}
+                        </h3>
+                        <Badge variant={child.is_active ? 'success' : 'default'} className="text-xs">
+                          {child.is_active ? 'Activo' : 'Inactivo'}
+                        </Badge>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEdit(child)
+                        }}
+                        className="font-medium transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#A38EC3] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap bg-white border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 active:bg-gray-100 px-2 sm:px-3 py-1.5 text-xs sm:text-sm rounded-xl sm:rounded-[16px]"
+                      >
+                        <Pencil size={16} className="mr-1" />
+                        Editar
+                      </Button>
                     </div>
                     <div className="flex flex-col gap-1 mt-1">
                       {child.birth_date && (
@@ -189,31 +268,17 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-[#A38EC3] mt-1 truncate">
-                      Profesional: {child.professional_name || 'Sin asignar'}
-                    </p>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {(child.professional_names ?? []).map((name, index) => (
+                        <span 
+                          key={index}
+                          className="text-xs px-2 py-1 bg-[#A38EC3]/10 text-[#A38EC3] rounded-full"
+                        >
+                          {name}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-
-                {/* Botones de acción */}
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleEdit(child)}
-                  >
-                    <Pencil size={16} className="mr-1" />
-                    Editar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-red-300 text-red-600 hover:bg-red-50"
-                    onClick={() => handleDelete(child.id)}
-                  >
-                    <Trash2 size={16} className="mr-1" />
-                    Eliminar
-                  </Button>
                 </div>
               </div>
             </Card>
