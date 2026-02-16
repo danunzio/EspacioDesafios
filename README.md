@@ -66,21 +66,24 @@ Ideal para:
    - OSDE
    - Sesión Individual
 3. Ir a "Profesionales" y agregar los profesionales de la clínica
-4. Ir a "Niños" y registrar los niños asignando profesionales
-5. Configurar en cada profesional (Perfil de Liquidación):
-   - Módulos asignados
-   - Porcentajes de comisión personalizados
+4. Ir a "Niños" y registrar los niños
+5. Ir a cada perfil de profesional y:
+   a. Asignar pacientes al profesional
+   b. Configurar qué tipos de módulo aplica a cada paciente
+   c. Configurar porcentajes de comisión por tipo de módulo
 ```
 
-#### 2. Uso Diario - Profesionales
+#### 2. Uso Diario - Profesionale
 ```
 1. Iniciar sesión con email y contraseña
 2. Ver "Mis Niños" para consultar datos de pacientes asignados
 3. Ir a "Sesiones" al final del mes
 4. Seleccionar mes y año
-5. Cargar cantidad de sesiones por cada niño y módulo
-6. Guardar cambios
-7. Ir a "Facturacion" para ver resumen y registrar pagos
+5. Ver los pacientes asignados con sus módulos configurados
+6. Cargar cantidad de sesiones por cada niño y tipo de módulo
+7. Ver el cálculo automático con el porcentaje de comisión correspondiente
+8. Guardar cambios
+9. Ir a "Facturación" para ver resumen y registrar pagos
 ```
 
 #### 3. Proceso Mensual - Administrador
@@ -379,10 +382,13 @@ CREATE TABLE children_professionals (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   child_id UUID NOT NULL REFERENCES children(id) ON DELETE CASCADE,
   professional_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  module_name TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(child_id, professional_id)
+  UNIQUE(child_id, professional_id, module_name)
 );
 ```
+
+> **Nota**: La columna `module_name` permite asignar diferentes tipos de módulo (nomenclatura, modulos, osde, sesion) a cada relación niño-profesional.
 
 ### Módulos Predefinidos
 
@@ -500,7 +506,7 @@ espacio-desafios/
    - **Edición**: Contraseña visible, datos del profesional, botón para eliminar/desactivar
    - **Perfil de Liquidación**: 
      - Asignación de pacientes vinculados
-     - Configuración Multi-Módulo (Nomenclatura, Módulos, OSDE, Sesión Individual)
+     - **Configuración de módulos por paciente**: Cada paciente puede tener uno o más tipos de módulo asignados (Nomenclatura, Módulos, OSDE, Sesión Individual)
      - Porcentaje variable por tipo de módulo
 4. **Valores**: Historial mensual editable (añadir, editar, eliminar valores)
 5. **Liquidaciones**: Filtros por año, mes y profesional

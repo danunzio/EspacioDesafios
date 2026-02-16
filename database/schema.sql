@@ -758,23 +758,27 @@ CREATE TABLE children_professionals (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   child_id UUID NOT NULL REFERENCES children(id) ON DELETE CASCADE,
   professional_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  module_name TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(child_id, professional_id)
+  UNIQUE(child_id, professional_id, module_name)
 );
 
 -- Indexes for children_professionals
 CREATE INDEX idx_children_professionals_child ON children_professionals(child_id);
 CREATE INDEX idx_children_professionals_professional ON children_professionals(professional_id);
+CREATE INDEX idx_children_professionals_module ON children_professionals(module_name);
 
 -- Enable RLS on children_professionals
 ALTER TABLE children_professionals ENABLE ROW LEVEL SECURITY;
 
--- RLS policies for children_professionals
+-- RLS policies for children_professionals (use OR REPLACE to avoid errors on re-run)
+DROP POLICY IF EXISTS "All authenticated users can view children_professionals" ON children_professionals;
 CREATE POLICY "All authenticated users can view children_professionals"
   ON children_professionals FOR SELECT
   TO authenticated
   USING (true);
 
+DROP POLICY IF EXISTS "Admins can manage children_professionals" ON children_professionals;
 CREATE POLICY "Admins can manage children_professionals"
   ON children_professionals FOR ALL
   TO authenticated
@@ -782,6 +786,7 @@ CREATE POLICY "Admins can manage children_professionals"
     SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin'
   ));
 
+DROP POLICY IF EXISTS "Professionals can view assigned children" ON children_professionals;
 CREATE POLICY "Professionals can view assigned children"
   ON children_professionals FOR SELECT
   TO authenticated

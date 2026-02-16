@@ -24,7 +24,7 @@ export default async function ProfessionalDetailPage({ params }: ProfessionalDet
     notFound();
   }
 
-  // Fetch assigned children from both sources
+  // Fetch assigned children from both sources with their modules
   const [directResult, relationResult] = await Promise.all([
     supabase
       .from('children')
@@ -33,14 +33,27 @@ export default async function ProfessionalDetailPage({ params }: ProfessionalDet
       .order('full_name'),
     supabase
       .from('children_professionals')
-      .select('child_id')
+      .select('child_id, module_name')
       .eq('professional_id', id)
   ]);
+
+  const VALUE_TYPES = ['nomenclatura', 'modulos', 'osde', 'sesion'];
+
+  const childModulesMap = new Map<string, string[]>();
+  if (relationResult.data) {
+    for (const r of relationResult.data) {
+      const existing = childModulesMap.get(r.child_id) || [];
+      if (r.module_name) {
+        existing.push(r.module_name);
+      }
+      childModulesMap.set(r.child_id, existing);
+    }
+  }
 
   let children: any[] = directResult.data || [];
 
   if (relationResult.data && relationResult.data.length > 0) {
-    const relationChildIds = relationResult.data.map(r => r.child_id);
+    const relationChildIds = [...new Set(relationResult.data.map(r => r.child_id))];
     const relationChildrenResult = await supabase
       .from('children')
       .select('*')
@@ -51,11 +64,18 @@ export default async function ProfessionalDetailPage({ params }: ProfessionalDet
       const map = new Map<string, any>();
       for (const child of [...children, ...relationChildrenResult.data]) {
         if (!map.has(child.id)) {
+          const modules = childModulesMap.get(child.id) || VALUE_TYPES;
+          child.modules = modules;
           map.set(child.id, child);
         }
       }
       children = Array.from(map.values());
     }
+  } else {
+    children = children.map(child => ({
+      ...child,
+      modules: VALUE_TYPES
+    }));
   }
 
   if (directResult.error) {

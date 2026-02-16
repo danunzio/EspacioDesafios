@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -34,6 +34,7 @@ import {
   deleteProfessionalModule,
   toggleProfessionalModule
 } from '@/lib/actions/values';
+import { createClient } from '@/lib/supabase/client';
 
 // Define locally since it cannot be imported from 'use server' files
 const VALUE_TYPES = [
@@ -64,6 +65,7 @@ interface Child {
   guardian_name: string;
   guardian_phone: string | null;
   is_active: boolean;
+  modules: string[];
 }
 
 interface ProfessionalModule {
@@ -121,6 +123,7 @@ export function ProfessionalDetailClient({
   liquidations
 }: ProfessionalDetailClientProps) {
   const router = useRouter();
+  const supabase = createClient();
   const [modules, setModules] = useState<ProfessionalModule[]>(initialModules);
   const [isAddingModule, setIsAddingModule] = useState(false);
   const [editingModule, setEditingModule] = useState<string | null>(null);
@@ -129,6 +132,8 @@ export function ProfessionalDetailClient({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [editingChildModules, setEditingChildModules] = useState<string | null>(null);
+  const [childModules, setChildModules] = useState<Record<string, string[]>>({});
 
   const activeChildren = children.filter(c => c.is_active);
   const inactiveChildren = children.filter(c => !c.is_active);
@@ -539,23 +544,127 @@ export function ProfessionalDetailClient({
 
         {activeChildren.length > 0 ? (
           <div className="space-y-3">
-            {activeChildren.map((child) => (
-              <div
-                key={child.id}
-                className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
-                onClick={() => router.push(`/admin/ninos/${child.id}`)}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-[#2D2A32]">{child.full_name}</p>
-                    <p className="text-sm text-[#6B6570]">
-                      {child.health_insurance || 'Sin obra social'} • {child.guardian_name}
-                    </p>
+            {activeChildren.map((child) => {
+              const isEditingModules = editingChildModules === child.id;
+              const childModuleList = childModules[child.id] || child.modules || [];
+
+              return (
+                <div
+                  key={child.id}
+                  className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 cursor-pointer" onClick={() => router.push(`/admin/ninos/${child.id}`)}>
+                      <p className="font-medium text-[#2D2A32]">{child.full_name}</p>
+                      <p className="text-sm text-[#6B6570]">
+                        {child.health_insurance || 'Sin obra social'} • {child.guardian_name}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isEditingModules ? (
+                        <div className="flex items-center gap-2">
+                          <div className="flex flex-col gap-1">
+                            {VALUE_TYPES.map(type => (
+                              <label key={type.value} className="flex items-center gap-2 text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={childModuleList.includes(type.value)}
+                                  onChange={(e) => {
+                                    const selected = e.target.checked
+                                      ? [...childModuleList, type.value]
+                                      : childModuleList.filter((m: string) => m !== type.value);
+                                    setChildModules(prev => ({ ...prev, [child.id]: selected }));
+                                  }}
+                                  className="rounded border-gray-300 text-[#A38EC3]"
+                                />
+                                <span>{type.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <button
+                            onClick={async () => {
+                              setLoading(true);
+                              try {
+                                const currentModules = childModules[child.id] || child.modules || [];
+                                
+                                // First delete all existing relations for this child-professional
+                                const { error: deleteError } = await supabase
+                                  .from('children_professionals')
+                                  .delete()
+                                  .eq('child_id', child.id)
+                                  .eq('professional_id', professional.id);
+                                
+                                if (deleteError) {
+                                  throw new Error('Delete error: ' + deleteError.message);
+                                }
+                                
+                                // Then insert new ones
+                                if (currentModules.length > 0) {
+                                  const inserts = currentModules.map(m => ({
+                                    child_id: child.id,
+                                    professional_id: professional.id,
+                                    module_name: m
+                                  }));
+                                  const { error: insertError } = await supabase.from('children_professionals').insert(inserts);
+                                  if (insertError) {
+                                    throw new Error('Insert error: ' + insertError.message);
+                                  }
+                                }
+                                setEditingChildModules(null);
+                                setSuccess('Módulos actualizados correctamente');
+                              } catch (err: any) {
+                                console.error('Full error:', err);
+                                setError('Error: ' + (err?.message || JSON.stringify(err)));
+                              }
+                              setLoading(false);
+                            }}
+                            className="p-1.5 hover:bg-green-50 text-green-600 rounded"
+                            title="Guardar"
+                          >
+                            <CheckCircle size={16} />
+                          </button>
+                          <button
+                            onClick={() => setEditingChildModules(null)}
+                            className="p-1.5 hover:bg-red-50 text-red-600 rounded"
+                            title="Cancelar"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex flex-wrap gap-1 mr-2">
+                            {childModuleList.length > 0 ? (
+                              childModuleList.slice(0, 2).map(m => (
+                                <span key={m} className="px-2 py-0.5 bg-[#A38EC3]/20 text-[#A38EC3] text-xs rounded-full">
+                                  {valueTypeLabels[m] || m}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs text-gray-400">Sin tipo</span>
+                            )}
+                            {childModuleList.length > 2 && (
+                              <span className="text-xs text-gray-400">+{childModuleList.length - 2}</span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => {
+                              setEditingChildModules(child.id);
+                              setChildModules(prev => ({ ...prev, [child.id]: child.modules || [] }));
+                            }}
+                            className="p-1.5 hover:bg-blue-50 text-blue-600 rounded"
+                            title="Editar módulos"
+                          >
+                            <Settings size={16} />
+                          </button>
+                          <ChevronLeft className="rotate-180 text-[#9A94A0]" size={20} />
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <ChevronLeft className="rotate-180 text-[#9A94A0]" size={20} />
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-8 text-[#6B6570]">

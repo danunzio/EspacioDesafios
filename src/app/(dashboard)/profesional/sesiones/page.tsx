@@ -32,11 +32,22 @@ interface SessionData {
   module_type: string;
   session_count: number;
   previous_month_count: number;
+  commission_percentage: number;
 }
 
 interface ModuleValue {
   module_name: string;
   base_value: number;
+}
+
+interface ChildModule {
+  child_id: string;
+  module_name: string;
+}
+
+interface ProfessionalModuleConfig {
+  value_type: string;
+  commission_percentage: number;
 }
 
 export default function ProfessionalSessionsPage() {
@@ -67,6 +78,7 @@ export default function ProfessionalSessionsPage() {
       try {
         setLoading(true);
 
+        // Get children from direct assignment
         const childrenFromDirectAssignment = await supabase
           .from('children')
           .select('id, full_name')
@@ -79,9 +91,10 @@ export default function ProfessionalSessionsPage() {
           throw childrenFromDirectAssignment.error;
         }
 
+        // Get children from relation table
         const childrenFromRelation = await supabase
           .from('children_professionals')
-          .select('child_id')
+          .select('child_id, module_name')
           .eq('professional_id', user.id);
 
         if (!isMounted) return;
@@ -90,7 +103,39 @@ export default function ProfessionalSessionsPage() {
           throw childrenFromRelation.error;
         }
 
-        const relatedChildIds = (childrenFromRelation.data || []).map(item => item.child_id);
+        // Build child modules map
+        const childModulesMap = new Map<string, string[]>();
+        const allModuleTypes = new Set<string>();
+        
+        for (const item of (childrenFromRelation.data || [])) {
+          if (item.module_name) {
+            const existing = childModulesMap.get(item.child_id) || [];
+            existing.push(item.module_name);
+            childModulesMap.set(item.child_id, existing);
+            allModuleTypes.add(item.module_name);
+          }
+        }
+
+        // Get professional module configurations (commission percentages)
+        const professionalModulesResponse = await supabase
+          .from('professional_modules')
+          .select('value_type, commission_percentage')
+          .eq('professional_id', user.id)
+          .eq('is_active', true);
+
+        if (!isMounted) return;
+
+        const professionalModulesMap = new Map<string, number>();
+        for (const mod of (professionalModulesResponse.data || [])) {
+          professionalModulesMap.set(mod.value_type, mod.commission_percentage);
+        }
+
+        // Default to 25% if not configured
+        const getCommissionPercentage = (moduleType: string) => {
+          return professionalModulesMap.get(moduleType) || 25;
+        };
+
+        const relatedChildIds = Array.from(new Set((childrenFromRelation.data || []).map((item: any) => item.child_id)));
         
         let relatedChildren: any[] = [];
         if (relatedChildIds.length > 0) {
@@ -112,12 +157,15 @@ export default function ProfessionalSessionsPage() {
         const uniqueChildrenMap = new Map();
         allChildren.forEach((child: any) => {
           if (!uniqueChildrenMap.has(child.id)) {
+            const modules = childModulesMap.get(child.id);
+            child.modules = modules ? modules : Array.from(allModuleTypes);
             uniqueChildrenMap.set(child.id, child);
           }
         });
 
         const childrenData = Array.from(uniqueChildrenMap.values());
 
+        // Get module values from database (for base values)
         const moduleValuesResponse = await supabase
           .from('module_values')
           .select('module_name, base_value')
@@ -203,6 +251,7 @@ export default function ProfessionalSessionsPage() {
               module_type: module,
               session_count: currentSessionsMap[key] || 0,
               previous_month_count: previousSessionsMap[key] || 0,
+              commission_percentage: getCommissionPercentage(module),
             });
           });
         });
@@ -305,8 +354,11 @@ export default function ProfessionalSessionsPage() {
   const estimatedBilling = sessions.reduce((acc, s) => {
     return acc + (s.session_count * getModuleValue(s.module_type));
   }, 0);
-  const commission = estimatedBilling * 0.25;
-  const netAmount = estimatedBilling - commission;
+  const totalCommission = sessions.reduce((acc, s) => {
+    const moduleValue = getModuleValue(s.module_type);
+    return acc + (s.session_count * moduleValue * (s.commission_percentage / 100));
+  }, 0);
+  const netAmount = estimatedBilling - totalCommission;
 
   const hasChanges = sessions.some((s) => s.session_count > 0);
 
@@ -396,7 +448,7 @@ export default function ProfessionalSessionsPage() {
                 key={`${session.child_id}-${session.module_type}`}
                 childName={getChildName(session.child_id)}
                 moduleType={session.module_type}
-                commissionPercentage={25}
+                commissionPercentage={session.commission_percentage}
                 sessionCount={session.session_count}
                 previousMonthCount={session.previous_month_count}
                 onChange={(count) => handleSessionChange(session.child_id, session.module_type, count)}
@@ -489,11 +541,11 @@ export default function ProfessionalSessionsPage() {
               <div className="flex items-center gap-2 mb-2">
                 <DollarSign className="text-[#F4C2C2]" size={16} />
                 <span className="text-sm font-medium text-[#6B6570]">
-                  Espacio Desafíos (25%)
+                  Espacio Desafíos
                 </span>
               </div>
               <p className="text-2xl font-bold text-[#2D2A32]">
-                {formatCurrency(commission)}
+                {formatCurrency(totalCommission)}
               </p>
               <p className="text-xs text-[#6B6570]">
                 Retención clínica

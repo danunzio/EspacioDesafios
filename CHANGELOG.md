@@ -7,6 +7,50 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [1.0.2] - 2026-02-16
+
+### ✨ Agregado
+
+#### Módulos por Paciente
+- **Tabla `children_professionals` ampliada** con columna `module_name` para guardar qué tipo de módulo aplica a cada paciente-profesional
+- **Selección de módulos en perfil de profesional** - Ahora cada paciente puede tener asignado uno o más tipos de módulo:
+  - Nomenclatura
+  - Módulos
+  - OSDE
+  - Sesión Individual
+- **Porcentaje de comisión personalizado** - Cada tipo de módulo tiene su propio porcentaje de comisión configurado en `professional_modules`
+
+#### Profesional/Sesiones
+- **Pacientes con módulos asignados** - Solo aparecen los pacientes asignados al profesional con sus tipos de módulo correspondientes
+- **Cálculo de facturación dinámico** - Usa el porcentaje de comisión específico de cada tipo de módulo
+- **Visualización de porcentaje** - Muestra el porcentaje de comisión configurado para cada módulo
+
+### 🐛 Corregido
+
+#### Errores de Runtime
+- **AbortError en profesional/ninos** - Agregado manejo para ignorar errores de cancelación de requests
+- **AbortError en profesional/sesiones** - Agregado manejo similar
+
+#### Errores de TypeScript
+- **admin/consumos/page.tsx** - Corregido tipo de `description` de `undefined` a `string`
+- **admin/consumos/page.tsx** - Corregido tipo para `setFormCategory`
+- **admin/liquidaciones/page.tsx** - Corregido `variant="info"` a `variant="warning"`
+- **admin/estadisticas/page.tsx** - Corregido tipo del formatter en Tooltip de gráficos
+- **admin/mas/page.tsx** - Corregido `size="xs"` a `size="sm"` en botones
+- **profesional/facturacion/page.tsx** - Corregidos tipos para badges y campos faltantes
+- **lib/actions/liquidations.ts** - Corregido tipo faltante en `LiquidationCalculation`
+- **admin/profesionales/[id]/professional-detail-client.tsx** - Corregido `variant="info"` a `variant="warning"`
+
+#### Errores de Datos
+- **add-child-modal.tsx** - Eliminado campo `fee_value` que no existe en la tabla
+- **profesional/page.tsx** - Actualizado para obtener pacientes de ambas fuentes (asignación directa y `children_professionals`)
+- **use-children.ts** - Actualizado hook para obtener niños de ambas fuentes
+
+### 📝 Documentación
+- Actualización de schema.sql con nueva columna `module_name` en `children_professionals`
+
+---
+
 ## [1.0.1] - 2026-02-15
 
 ### 🐛 Corregido
