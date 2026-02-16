@@ -145,7 +145,7 @@ export default function AdminConsumosPage() {
       year: formYear,
       month: formMonth,
       category: formCategory,
-      description: formDescription.trim() || undefined,
+      description: formDescription.trim() || '',
       amount: numericAmount
     };
 
@@ -175,7 +175,7 @@ export default function AdminConsumosPage() {
   const handleEdit = (expense: Expense) => {
     setFormYear(expense.year);
     setFormMonth(expense.month);
-    setFormCategory(expense.category);
+    setFormCategory(expense.category as ExpenseCategory);
     setFormDescription(expense.description || '');
     setFormAmount(expense.amount.toString());
     setEditingId(expense.id);
@@ -358,7 +358,7 @@ export default function AdminConsumosPage() {
                 </label>
                 <select
                   value={formCategory}
-                  onChange={(e) => setFormCategory(e.target.value)}
+                  onChange={(e) => setFormCategory(e.target.value as ExpenseCategory)}
                   className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none bg-white"
                   disabled={loading}
                 >

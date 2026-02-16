@@ -284,7 +284,7 @@ export default function EstadisticasPage() {
                 <XAxis dataKey="month" stroke="#6B6570" />
                 <YAxis stroke="#6B6570" tickFormatter={(value) => `$${value / 1000}k`} />
                 <Tooltip 
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value: number | undefined) => formatCurrency(value || 0)}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 />
                 <Bar dataKey="facturacion" fill="#A38EC3" radius={[8, 8, 0, 0]} />
@@ -330,7 +330,7 @@ export default function EstadisticasPage() {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  <Tooltip formatter={(value: number | undefined) => formatCurrency(value || 0)} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -403,7 +403,7 @@ export default function EstadisticasPage() {
                 <XAxis type="number" stroke="#6B6570" tickFormatter={(value) => `$${value / 1000}k`} />
                 <YAxis dataKey="name" type="category" stroke="#6B6570" width={150} />
                 <Tooltip 
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value: number | undefined) => formatCurrency(value || 0)}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 />
                 <Bar dataKey="facturacion" fill="#A38EC3" radius={[0, 8, 8, 0]} />

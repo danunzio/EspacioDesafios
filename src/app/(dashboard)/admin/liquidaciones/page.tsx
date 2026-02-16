@@ -188,7 +188,7 @@ export default function AdminLiquidationsPage() {
         );
       case 'approved':
         return (
-          <Badge variant="info">
+          <Badge variant="warning">
             <CheckCircle size={14} className="mr-1" />
             Aprobado
           </Badge>
