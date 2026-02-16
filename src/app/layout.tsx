@@ -16,7 +16,6 @@ export const metadata: Metadata = {
   title: "Espacio Desafíos",
   description: "Plataforma de gestión para profesionales de psicomotricidad relacional",
   manifest: "/manifest.json",
-  themeColor: "#4A90D9",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
