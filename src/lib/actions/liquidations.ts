@@ -136,6 +136,9 @@ export async function calculateLiquidation(
           month,
           totalSessions: 0,
           totalAmount: 0,
+          professionalPercentage: 25,
+          professionalAmount: 0,
+          clinicAmount: 0,
           moduleBreakdown: []
         }
       };

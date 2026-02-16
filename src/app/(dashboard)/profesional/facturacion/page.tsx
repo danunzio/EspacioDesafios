@@ -190,14 +190,17 @@ export default function ProfessionalBillingPage() {
       return;
     }
 
+    if (!user) return;
+
     setSaving(true);
     const result = await createPaymentToClinic({
+      professional_id: user.id,
       year: selectedYear,
       month: selectedMonth,
       payment_date: paymentDate,
       payment_type: paymentType,
       amount: parseFloat(paymentAmount),
-      notes: paymentNotes || undefined,
+      notes: paymentNotes || '',
     });
 
     if (result.success) {
@@ -373,14 +376,14 @@ export default function ProfessionalBillingPage() {
             </div>
 
             <div className="mt-4 flex items-center justify-between">
-              <Badge variant={currentBilling.status === 'paid' ? 'success' : currentBilling.status === 'approved' ? 'info' : 'warning'}>
+              <Badge variant={currentBilling.status === 'paid' ? 'success' : currentBilling.status === 'approved' ? 'warning' : 'default'}>
                 {currentBilling.status === 'paid'
                   ? 'Pagado'
                   : currentBilling.status === 'approved'
                   ? 'Aprobado'
                   : 'Pendiente'}
               </Badge>
-              {currentBilling.is_paid && (
+              {currentBilling.status === 'paid' && (
                 <span className="text-sm text-green-600 flex items-center gap-1">
                   <CheckCircle size={16} />
                   Pago procesado
@@ -445,7 +448,7 @@ export default function ProfessionalBillingPage() {
                     <Wallet size={48} className="mx-auto mb-3 opacity-50" />
                     <p>No has registrado pagos este mes</p>
                     <p className="text-sm mt-1">
-                      Comisión pendiente: {formatCurrency(currentBilling.commission)}
+                      Comisión pendiente: {formatCurrency(currentBilling.clinic_amount)}
                     </p>
                   </div>
                 )}

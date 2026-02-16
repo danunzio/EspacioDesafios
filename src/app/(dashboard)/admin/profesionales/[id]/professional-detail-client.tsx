@@ -237,7 +237,7 @@ export function ProfessionalDetailClient({
       case 'paid':
         return <Badge variant="success">Pagado</Badge>;
       case 'approved':
-        return <Badge variant="info">Aprobado</Badge>;
+        return <Badge variant="warning">Aprobado</Badge>;
       case 'cancelled':
         return <Badge variant="error">Cancelado</Badge>;
       default:

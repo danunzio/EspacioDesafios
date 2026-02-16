@@ -398,7 +398,7 @@ export default function AdminMorePage() {
                     {editingId === insurance.id ? (
                       <>
                         <Button
-                          size="xs"
+                          size="sm"
                           variant="primary"
                           disabled={loading}
                           onClick={() => handleSaveEdit(insurance.id)}
@@ -406,7 +406,7 @@ export default function AdminMorePage() {
                           Guardar
                         </Button>
                         <Button
-                          size="xs"
+                          size="sm"
                           variant="outline"
                           disabled={loading}
                           onClick={handleCancelEdit}
@@ -417,7 +417,7 @@ export default function AdminMorePage() {
                     ) : (
                       <>
                         <Button
-                          size="xs"
+                          size="sm"
                           variant="outline"
                           disabled={loading}
                           onClick={() => handleStartEdit(insurance)}
@@ -425,7 +425,7 @@ export default function AdminMorePage() {
                           Editar
                         </Button>
                         <Button
-                          size="xs"
+                          size="sm"
                           variant={insurance.is_active ? 'outline' : 'primary'}
                           disabled={loading}
                           onClick={() => handleToggleActive(insurance)}
@@ -433,7 +433,7 @@ export default function AdminMorePage() {
                           {insurance.is_active ? 'Desactivar' : 'Activar'}
                         </Button>
                         <Button
-                          size="xs"
+                          size="sm"
                           variant="outline"
                           disabled={loading}
                           onClick={() => handleDeleteInsurance(insurance.id)}
