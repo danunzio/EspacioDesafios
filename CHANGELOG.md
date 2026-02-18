@@ -7,6 +7,116 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [1.1.2] - 2026-02-18
+
+### 🔄 Refactorización de Dashboards y Navegación
+
+#### 👨‍💼 Panel de Administración
+- **Dashboard**: Se eliminaron las secciones de "Valor Módulo" y "Liquidaciones" de la vista principal para simplificar el resumen.
+- **Notificaciones**: 
+  - Se eliminó el botón global "Borrar todas".
+  - Se movió el botón individual "Borrar" a la derecha de cada notificación para mejorar la accesibilidad y el diseño.
+
+#### 👨‍⚕️ Panel de Profesional
+- **Dashboard**: Se eliminaron las tarjetas de "Facturación" y "Comisión 25%" para enfocar la vista en la gestión de pacientes y sesiones.
+- **Navegación**: Se eliminó la pestaña "Facturacion" del menú inferior (`BottomNav`).
+- **Textos**: Se actualizaron las llamadas a la acción (CTA) y avisos para referirse a "mantener el registro actualizado" en lugar de "facturación".
+
+#### 📝 Documentación
+- Actualizado **README.md** para reflejar la eliminación de las secciones financieras en el perfil del profesional y simplificar los flujos de uso diario.
+
+---
+
+## [1.1.0] - 2026-02-18
+
+### ✨ Agregado
+
+#### 🎨 Sistema de Diseño UI Completo
+- **Sistema de espaciado** basado en 4px (spacing-1 a spacing-20)
+- **Sistema de z-index** organizado (z-dropdown: 10, z-sticky: 20, z-fixed: 30, etc.)
+- **Sistema tipográfico** con variables CSS (--text-xs a --text-4xl, font-weights)
+- **Sistema de transiciones** (--transition-fast: 150ms, --transition-normal: 200ms, --transition-slow: 300ms)
+- **Contenedores responsive** con clase `.container-mobile`
+- **Touch target utility** (--touch-target: 44px)
+
+#### 🧩 Nuevos Componentes UI
+- **Skeleton** - Componentes de carga para mejor UX:
+  - `Skeleton` base con variantes (text, circular, rectangular, card)
+  - `SkeletonCard` para tarjetas
+  - `SkeletonList` para listados
+  - `SkeletonTable` para tablas
+- **Spinner** - Indicadores de carga:
+  - `Spinner` con tamaños (sm, md, lg, xl)
+  - `LoadingOverlay` para superposición de carga
+  - `LoadingState` para estados de carga
+- **Toast** - Sistema de notificaciones toast:
+  - `ToastProvider` y `useToast` hook
+  - 4 variantes (success, error, warning, info)
+  - Auto-dismiss después de 4 segundos
+  - Animaciones suaves
+
+#### 📱 PWA Completamente Configurada
+- **Manifest.json** mejorado:
+  - Iconos maskable y any
+  - Shortcuts para acceso rápido (Sesiones, Pacientes, Liquidaciones)
+  - Configuración de idioma es-AR
+- **Install Prompt** inteligente:
+  - Detecta dispositivo (Android/iOS/Desktop)
+  - Prompt nativo en Android (beforeinstallprompt)
+  - Instrucciones visuales paso a paso para iOS
+  - Persiste decisión por 7 días
+  - No muestra si ya está instalada
+- **Service Worker** optimizado:
+  - Cache strategies (network-first, cache-first, stale-while-revalidate)
+  - Soporte offline
+  - Push notifications
+- **Página offline** con diseño coherente
+- **Meta tags Apple/iOS** completos (apple-touch-icon, status-bar-style, etc.)
+
+#### 🔐 Login Mejorado
+- Logo de Espacio Desafíos en pantalla de login
+- Fondo con gradiente sutil
+- Textos con colores de la paleta
+
+### 🔄 Mejorado
+
+#### Componentes UI Existentes
+- **Button**:
+  - Touch target mínimo 44px
+  - 5 variantes (primary, secondary, outline, ghost, destructive)
+  - Prop `loading` con spinner automático
+  - Props `leftIcon` y `rightIcon`
+  - Estados hover/active/focus/disabled mejorados
+- **Input**:
+  - Touch target mínimo 44px
+  - Props `leftIcon` y `rightIcon`
+  - Prop `hint` para texto de ayuda
+  - Estados consistentes (hover, focus, disabled, error)
+- **Select**:
+  - Touch target mínimo 44px
+  - Icono ChevronDown integrado
+  - forwardRef para mejor control
+- **Textarea**:
+  - Estados consistentes con otros inputs
+  - Prop `hint`
+- **Badge**:
+  - 6 variantes (default, primary, success, warning, error, outline)
+  - 3 tamaños (sm, md, lg)
+- **Modal**:
+  - z-index usando sistema organizado
+- **Header**:
+  - Touch targets 44px en botones
+  - Estados hover/active/focus mejorados
+  - z-index corregido
+- **BottomNav**:
+  - z-index usando sistema organizado
+
+### 📝 Documentación
+- README.md actualizado con nuevas funcionalidades PWA
+- CHANGELOG.md actualizado
+
+---
+
 ## [1.0.4] - 2026-02-18
 
 ### ✨ Agregado

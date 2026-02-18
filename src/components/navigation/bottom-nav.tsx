@@ -20,7 +20,6 @@ const professionalTabs = [
   { icon: Home, label: 'Inicio', href: '/profesional' },
   { icon: Baby, label: 'Pacientes', href: '/profesional/ninos' },
   { icon: Calendar, label: 'Sesiones', href: '/profesional/sesiones' },
-  { icon: Receipt, label: 'Facturacion', href: '/profesional/facturacion' },
 ];
 
 export function BottomNav({ userRole }: BottomNavProps) {
@@ -29,7 +28,7 @@ export function BottomNav({ userRole }: BottomNavProps) {
   const tabs = userRole === 'admin' ? adminTabs : professionalTabs;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] pb-safe z-fixed">
       <div className="flex items-center justify-around h-16">
         {tabs.map((tab) => {
           const isActive = pathname === tab.href || pathname.startsWith(tab.href);

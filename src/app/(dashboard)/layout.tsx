@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Header } from '@/components/navigation/header'
 import { BottomNav } from '@/components/navigation/bottom-nav'
+import { InstallPrompt } from '@/components/ui/install-prompt'
 import { Profile } from '@/types'
 
 interface DashboardLayoutProps {
@@ -47,6 +48,7 @@ export default async function DashboardLayout({
       </main>
 
       <BottomNav userRole={userRole} />
+      <InstallPrompt />
     </div>
   )
 }

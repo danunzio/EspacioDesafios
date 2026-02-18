@@ -1,44 +1,66 @@
 {
   "name": "Espacio Desafíos",
-  "short_name": "Espacio",
-  "description": "Gestión terapéutica para clínica Espacio Desafíos",
+  "short_name": "Desafíos",
+  "description": "Sistema de gestión para clínicas terapéuticas - Registro de sesiones, liquidaciones y más",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F8F7FF",
   "theme_color": "#A38EC3",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "scope": "/",
-  "lang": "es",
+  "lang": "es-AR",
   "dir": "ltr",
-  "categories": ["productivity", "health", "medical"],
+  "categories": ["productivity", "health", "medical", "business"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/dashboard.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Dashboard de gestión"
+      "purpose": "any"
     },
     {
-      "src": "/screenshots/mobile.png",
-      "sizes": "750x1334",
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Vista móvil"
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Mis Sesiones",
+      "short_name": "Sesiones",
+      "description": "Registrar sesiones del mes",
+      "url": "/profesional/sesiones",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mis Pacientes",
+      "short_name": "Pacientes",
+      "description": "Ver pacientes asignados",
+      "url": "/profesional/ninos",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Liquidaciones",
+      "short_name": "Liquidaciones",
+      "description": "Gestionar liquidaciones",
+      "url": "/admin/liquidaciones",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [],
+  "display_override": ["standalone", "browser"]
 }

@@ -9,6 +9,77 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   
+  /* ========================================
+     SISTEMA DE ESPACIADO (4px base)
+     ======================================== */
+  --spacing-0: 0;
+  --spacing-1: 0.25rem;   /* 4px */
+  --spacing-2: 0.5rem;    /* 8px */
+  --spacing-3: 0.75rem;   /* 12px */
+  --spacing-4: 1rem;      /* 16px */
+  --spacing-5: 1.25rem;   /* 20px */
+  --spacing-6: 1.5rem;    /* 24px */
+  --spacing-8: 2rem;      /* 32px */
+  --spacing-10: 2.5rem;   /* 40px */
+  --spacing-12: 3rem;     /* 48px */
+  --spacing-16: 4rem;     /* 64px */
+  --spacing-20: 5rem;     /* 80px */
+  
+  /* ========================================
+     SISTEMA DE Z-INDEX
+     ======================================== */
+  --z-base: 0;
+  --z-dropdown: 10;
+  --z-sticky: 20;
+  --z-fixed: 30;
+  --z-modal-backdrop: 40;
+  --z-modal: 50;
+  --z-popover: 60;
+  --z-tooltip: 70;
+  --z-toast: 80;
+  
+  /* ========================================
+     SISTEMA TIPOGRÁFICO
+     ======================================== */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.875rem;    /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg: 1.125rem;    /* 18px */
+  --text-xl: 1.25rem;     /* 20px */
+  --text-2xl: 1.5rem;     /* 24px */
+  --text-3xl: 1.875rem;   /* 30px */
+  --text-4xl: 2.25rem;    /* 36px */
+  
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+  
+  /* ========================================
+     CONTENEDORES RESPONSIVOS
+     ======================================== */
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1536px;
+  
+  /* ========================================
+     TRANSICIONES
+     ======================================== */
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow: 300ms ease;
+  
+  /* ========================================
+     TOUCH TARGETS
+     ======================================== */
+  --touch-target: 44px;
+  
   /* Colores personalizados de la app */
   --color-primary: #A38EC3;
   --color-primary-light: #B8A5D3;
@@ -187,3 +258,96 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ========================================
+   SKELETON ANIMATION
+   ======================================== */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #E8E5F0 0%,
+    #F0EDF5 50%,
+    #E8E5F0 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+
+/* ========================================
+   SPINNER ANIMATION
+   ======================================== */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner {
+  animation: spin 0.8s linear infinite;
+}
+
+/* ========================================
+   TOUCH TARGET UTILITY
+   ======================================== */
+.touch-target {
+  min-height: var(--touch-target);
+  min-width: var(--touch-target);
+}
+
+/* ========================================
+   CONTAINER UTILITIES
+   ======================================== */
+.container-mobile {
+  width: 100%;
+  padding-left: var(--spacing-3);
+  padding-right: var(--spacing-3);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) {
+  .container-mobile {
+    padding-left: var(--spacing-4);
+    padding-right: var(--spacing-4);
+    max-width: var(--container-md);
+  }
+}
+
+@media (min-width: 768px) {
+  .container-mobile {
+    max-width: var(--container-lg);
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-mobile {
+    padding-left: var(--spacing-6);
+    padding-right: var(--spacing-6);
+    max-width: var(--container-xl);
+  }
+}
+
+/* ========================================
+   Z-INDEX UTILITIES
+   ======================================== */
+.z-dropdown { z-index: var(--z-dropdown); }
+.z-sticky { z-index: var(--z-sticky); }
+.z-fixed { z-index: var(--z-fixed); }
+.z-modal-backdrop { z-index: var(--z-modal-backdrop); }
+.z-modal { z-index: var(--z-modal); }
+.z-popover { z-index: var(--z-popover); }
+.z-tooltip { z-index: var(--z-tooltip); }
+.z-toast { z-index: var(--z-toast); }

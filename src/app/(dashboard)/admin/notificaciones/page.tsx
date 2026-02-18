@@ -13,7 +13,8 @@ import {
   Clock,
   AlertCircle,
   Info,
-  CheckCircle2
+  CheckCircle2,
+  Trash2
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -81,6 +82,22 @@ export default function NotificacionesPage() {
     }
   };
 
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('¿Estás seguro de que deseas eliminar esta notificación?')) return;
+
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', id);
+
+    if (!error) {
+      setNotifications(notifications.filter(n => n.id !== id));
+    }
+  };
+
+
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'success':
@@ -119,14 +136,16 @@ export default function NotificacionesPage() {
 
       {/* Actions */}
       {unreadCount > 0 && (
-        <Button
-          variant="outline"
-          onClick={handleMarkAllAsRead}
-          className="w-full sm:w-auto"
-        >
-          <CheckCheck size={18} className="mr-2" />
-          Marcar todas como leídas
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button
+            variant="outline"
+            onClick={handleMarkAllAsRead}
+            className="flex-1 sm:flex-initial"
+          >
+            <CheckCheck size={18} className="mr-2" />
+            Marcar todas como leídas
+          </Button>
+        </div>
       )}
 
       {/* Notifications List */}
@@ -139,9 +158,16 @@ export default function NotificacionesPage() {
           notifications.map((notification) => (
             <Card
               key={notification.id}
-              className={`p-4 transition-all ${notification.is_read ? 'bg-gray-50 opacity-75' : 'bg-white'
+              className={`p-4 transition-all relative group ${notification.is_read ? 'bg-gray-50 opacity-75' : 'bg-white'
                 }`}
             >
+              <button
+                onClick={(e) => handleDelete(notification.id, e)}
+                className="absolute top-4 right-4 p-2 hover:bg-red-50 text-red-600 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                title="Eliminar notificación"
+              >
+                <Trash2 size={18} />
+              </button>
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 mt-1">
                   {getNotificationIcon(notification.type)}
@@ -161,23 +187,28 @@ export default function NotificacionesPage() {
                         {new Date(notification.created_at).toLocaleString('es-CL')}
                       </div>
                     </div>
-                    {!notification.is_read && (
-                      <button
-                        onClick={() => handleMarkAsRead(notification.id)}
-                        className="p-2 hover:bg-blue-50 text-blue-600 rounded-full transition-colors flex-shrink-0"
-                        title="Marcar como leída"
-                      >
-                        <Check size={18} />
-                      </button>
-                    )}
                     {notification.title === 'Nuevo pago recibido' && (
                       <Link
                         href="/admin/pagos"
-                        className="ml-2 px-3 py-2 text-sm rounded-full bg-[#A38EC3]/10 text-[#2D2A32] hover:bg-[#A38EC3]/20 transition-colors flex-shrink-0"
+                        className="mt-2 px-3 py-2 text-sm rounded-full bg-[#A38EC3]/10 text-[#2D2A32] hover:bg-[#A38EC3]/20 transition-colors inline-block"
                         title="Revisar pagos"
                       >
                         Revisar pagos
                       </Link>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 flex-shrink-0 mr-8">
+                    {!notification.is_read && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMarkAsRead(notification.id);
+                        }}
+                        className="p-2 hover:bg-blue-50 text-blue-600 rounded-full transition-colors"
+                        title="Marcar como leída"
+                      >
+                        <Check size={18} />
+                      </button>
                     )}
                   </div>
                 </div>
@@ -196,6 +227,6 @@ export default function NotificacionesPage() {
           </Card>
         )}
       </div>
-    </div>
+    </div >
   );
 }

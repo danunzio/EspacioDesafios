@@ -7,8 +7,6 @@ import { Card } from '@/components/ui/card'
 import {
   Users,
   Baby,
-  DollarSign,
-  FileText,
   Plus,
   TrendingDown,
   TrendingUp,
@@ -64,13 +62,11 @@ export function AdminDashboardClient({
         <h2 className="text-xl sm:text-2xl font-bold text-[#2D2A32]">
           ¡Hola, {profile.full_name?.split(' ')[0]}!
         </h2>
-        <p className="text-sm text-[#6B6570] mt-1">
-          Bienvenido al panel de administración
-        </p>
+
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         <StatsCard
           title="Total Profesionales"
           value={stats.totalProfessionals}
@@ -84,21 +80,6 @@ export function AdminDashboardClient({
           subtitle="En tratamiento"
           icon={Baby}
           color="pink"
-        />
-        <StatsCard
-          title="Valor Módulo"
-          value={`$${stats.currentModule?.fee_value?.toLocaleString('es-CL') || '0'}`}
-          subtitle="Mes actual"
-          icon={DollarSign}
-          color="aqua"
-        />
-        <StatsCard
-          title="Liquidaciones"
-          value={stats.pendingLiquidations}
-          subtitle="Pendientes"
-          icon={FileText}
-          color="yellow"
-          onClick={() => router.push('/admin/liquidaciones')}
         />
         <StatsCard
           title="Pagos por verificar"

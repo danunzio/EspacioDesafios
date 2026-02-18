@@ -66,16 +66,15 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
+      className="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in z-modal"
       onClick={handleBackdropClick}
       onKeyDown={handleBackdropKeyDown}
       aria-modal="true"
       role="dialog"
       tabIndex={-1}
     >
-      {/* Backdrop with blur effect */}
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm z-modal-backdrop"
         aria-hidden="true"
       />
 

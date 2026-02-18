@@ -29,15 +29,15 @@ El sistema nace de la necesidad de digitalizar y optimizar la gestión administr
 | Perfil | Necesidades Cubiertas |
 |--------|----------------------|
 | **Administradores** | Gestión completa de profesionales, niños, valores, liquidaciones y estadísticas |
-| **Profesionales Terapeutas** | Registro de sesiones, consulta de niños asignados, facturación personal y pagos |
+| **Profesionales Terapeutas** | Registro de sesiones y consulta de niños asignados |
 | **Familias** | (Próximamente) Portal para ver progreso y próximas sesiones |
 
 ### 💡 Casos de Uso Principales
 
 1. **Administrador registra un nuevo niño** con sus datos, obra social y asigna un profesional
 2. **Profesional accede desde su celular** y carga las sesiones realizadas durante el mes
-3. **Sistema calcula automáticamente** la facturación y comisión del profesional
-4. **Administrador genera liquidaciones** mensuales con filtros avanzados
+3. **Sistema registra automáticamente** las sesiones realizadas durante el mes
+4. **Administrador gestiona liquidaciones** y pagos de profesionales
 5. **Profesional registra pagos** a Espacio Desafíos, el administrador recibe notificación y verifica el pago
 
 ### 🏥 Contexto de Uso
@@ -83,7 +83,6 @@ Ideal para:
 6. Cargar cantidad de sesiones por cada niño y tipo de módulo
 7. Ver el cálculo automático con el porcentaje de comisión correspondiente
 8. Guardar cambios
-9. Ir a "Facturación" para ver resumen y registrar pagos
 ```
 
 #### 3. Proceso Mensual - Administrador
@@ -442,13 +441,13 @@ espacio-desafios/
 │   │   │   ├── profesional/ # Rutas para profesionales
 │   │   │   │   ├── page.tsx                    # Dashboard profesional
 │   │   │   │   ├── configuracion/              # Configuración profesional
-│   │   │   │   ├── facturacion/                # Facturación y pagos
 │   │   │   │   ├── ninos/                      # Mis pacientes
 │   │   │   │   ├── notificaciones/             # Notificaciones profesional
 │   │   │   │   └── sesiones/                   # Carga de sesiones
 │   │   │   ├── layout.tsx
 │   │   │   └── page.tsx
 │   │   ├── api/        # API Routes
+│   │   ├── offline/     # Página offline PWA
 │   │   ├── globals.css
 │   │   ├── layout.tsx
 │   │   └── page.tsx
@@ -462,7 +461,15 @@ espacio-desafios/
 │   │       ├── badge.tsx
 │   │       ├── button.tsx
 │   │       ├── card.tsx
-│   │       └── input.tsx
+│   │       ├── input.tsx
+│   │       ├── install-prompt.tsx
+│   │       ├── modal.tsx
+│   │       ├── select.tsx
+│   │       ├── skeleton.tsx
+│   │       ├── spinner.tsx
+│   │       ├── textarea.tsx
+│   │       ├── toast.tsx
+│   │       └── index.ts
 │   ├── 📂 lib/
 │   │   ├── actions/    # Server Actions
 │   │   │   ├── liquidations.ts
@@ -529,11 +536,8 @@ espacio-desafios/
 
 | Funcionalidad | Estado | Descripción |
 |---------------|--------|-------------|
-| 📊 **Dashboard Personal** | ✅ | Vista de sesiones y estadísticas con CTA a Sesiones |
-| 👶 **Mis Niños** | ✅ | Ver niños asignados (sin diagnóstico), con Llamar y WhatsApp |
-| 🗓️ **Registro de Sesiones** | ✅ | Registrar sesiones por tipo de módulo y porcentaje |
-| 💵 **Mi Facturación** | ✅ | Ver historial, detalle por módulo, registrar pagos |
-| 🔔 **Notificaciones** | ✅ | Sistema de notificaciones con badge en header |
+|  **Mis Niños** | ✅ | Ver niños asignados (sin diagnóstico), con Llamar y WhatsApp |
+|  **Notificaciones** | ✅ | Sistema de notificaciones con badge en header |
 | ⚙️ **Configuración** | ✅ | Perfil y logout |
 | 📱 **Acceso Móvil** | ✅ | Optimizado para uso desde celular |
 
@@ -541,7 +545,7 @@ espacio-desafios/
 
 1. **Dashboard**:
    - Card destacada: "¡Comienza a cargar tus sesiones!" → redirige a Sesiones
-   - Estadísticas del mes actual
+   - Estadísticas del mes actual (Pacientes y Sesiones)
 
 2. **Header**: 
    - Botones de Notificaciones (campana) y Configuración (tuerca) en la esquina superior derecha
@@ -558,19 +562,6 @@ espacio-desafios/
    - **Entre nombre y "Mes anterior"**: Tipo de Módulo y Porcentaje (ej: "Psicomotricidad • 25%")
    - Pacientes con múltiples módulos aparecen en filas separadas
    - Botón "Guardar Sesiones" **centrado**
-   - Vista previa de facturación
-
-5. **Facturación**:
-   - **Resumen por tipo de módulo**:
-     - Cantidad de sesiones por módulo
-     - Valor del módulo
-     - Total facturado por módulo
-     - Comisión (%) y monto
-     - Neto por módulo
-   - **Pago a Espacio Desafíos**:
-     - Fecha, Tipo de pago (efectivo/transferencia), Importe
-     - Lista de pagos realizados
-     - Al guardar: notificación automática al administrador
 
 ---
 
@@ -593,6 +584,46 @@ espacio-desafios/
 | **Text Muted** | `#9A94A0` | Texto deshabilitado |
 | **Border** | `#E8E5F0` | Bordes y divisores |
 
+### Sistema de Espaciado
+
+Basado en múltiplos de 4px para consistencia:
+
+| Variable | Valor | Uso |
+|----------|-------|-----|
+| `--spacing-1` | 4px | Espaciado mínimo |
+| `--spacing-2` | 8px | Espaciado pequeño |
+| `--spacing-3` | 12px | Espaciado medio-pequeño |
+| `--spacing-4` | 16px | Espaciado estándar |
+| `--spacing-6` | 24px | Espaciado grande |
+| `--spacing-8` | 32px | Espaciado extra grande |
+
+### Sistema Tipográfico
+
+| Variable | Tamaño | Uso |
+|----------|--------|-----|
+| `--text-xs` | 12px | Texto pequeño, captions |
+| `--text-sm` | 14px | Texto secundario |
+| `--text-base` | 16px | Texto normal |
+| `--text-lg` | 18px | Subtítulos |
+| `--text-xl` | 20px | Títulos pequeños |
+| `--text-2xl` | 24px | Títulos |
+| `--text-3xl` | 30px | Títulos destacados |
+
+### Sistema de Z-Index
+
+Organizado en niveles para evitar conflictos:
+
+| Clase | Valor | Uso |
+|-------|-------|-----|
+| `.z-dropdown` | 10 | Menús desplegables |
+| `.z-sticky` | 20 | Elementos sticky |
+| `.z-fixed` | 30 | Navegación fija |
+| `.z-modal-backdrop` | 40 | Fondo de modales |
+| `.z-modal` | 50 | Modales |
+| `.z-popover` | 60 | Popovers |
+| `.z-tooltip` | 70 | Tooltips |
+| `.z-toast` | 80 | Notificaciones toast |
+
 ### Sombras
 
 ```css
@@ -600,6 +631,18 @@ espacio-desafios/
 --shadow-card: 0 2px 12px rgba(163, 195, 0.08);
 --shadow-button: 0 4px 14px rgba(163, 142, 195, 0.3);
 ```
+
+### Transiciones
+
+```css
+--transition-fast: 150ms ease;    /* Micro-interacciones */
+--transition-normal: 200ms ease;  /* Transiciones estándar */
+--transition-slow: 300ms ease;    /* Animaciones complejas */
+```
+
+### Touch Targets
+
+Todos los elementos interactivos tienen un tamaño mínimo de 44x44px para cumplir con los estándares de accesibilidad móvil.
 
 ### Navegación
 
@@ -618,7 +661,6 @@ espacio-desafios/
 - 🏠 Inicio
 - 👶 Pacientes
 - 📅 Sesiones
-- 🧾 Facturacion
 
 ---
 
@@ -649,8 +691,7 @@ clinic_amount = total_amount - professional_amount
 4. **Profesional registra sesiones** mensualmente por niño y módulo
 5. **Sistema calcula automáticamente** la liquidación con los porcentajes configurados
 6. **Admin aprueba y marca como pagada** la liquidación
-7. **Profesional registra pagos** a Espacio Desafíos
-8. **Admin recibe notificación** de cada pago registrado
+7. **Admin recibe notificación** de cada pago registrado o carga de sesiones
 
 ---
 
@@ -697,22 +738,63 @@ Tailwind v4 usa configuración diferente. Los estilos se definen directamente en
 
 ---
 
-## 📱 PWA - Instalación
+## 📱 PWA - Progressive Web App
 
-### Android (Chrome)
+### Características
+
+- ✅ **Instalable** en Android e iOS
+- ✅ **Prompt automático** de instalación inteligente
+- ✅ **Funciona offline** con página de fallback
+- ✅ **Push notifications** preparado
+- ✅ **Cache optimizado** con múltiples estrategias
+- ✅ **Shortcuts** en pantalla de inicio
+
+### Instalación
+
+#### Android (Chrome)
 1. Abre la app en Chrome
-2. Toca el menú (⋮)
-3. Selecciona "Agregar a pantalla de inicio"
+2. Espera 2-3 segundos y aparecerá el prompt de instalación
+3. O toca el menú (⋮) → "Agregar a pantalla de inicio"
 
-### iOS (Safari)
+#### iOS (Safari)
 1. Abre la app en Safari
-2. Toca el botón Compartir
-3. Selecciona "Agregar a pantalla de inicio"
+2. Espera el prompt con instrucciones visuales
+3. O manualmente: Botón Compartir → "Agregar a pantalla de inicio"
 
-### Desktop (Chrome/Edge)
+#### Desktop (Chrome/Edge)
 1. Abre la app
 2. Click en el ícono de instalación en la barra de direcciones
 3. Sigue las instrucciones
+
+### Comportamiento del Prompt
+
+| Característica | Descripción |
+|----------------|-------------|
+| **Detección de dispositivo** | Android, iOS, Desktop |
+| **Prompt Android** | Nativo con `beforeinstallprompt` |
+| **Instrucciones iOS** | Modal visual paso a paso |
+| **Frecuencia** | Máximo cada 7 días |
+| **Persistencia** | No muestra si ya instalada |
+
+### Estructura PWA
+
+```
+public/
+├── manifest.json          # Configuración PWA
+├── sw.js                  # Service Worker
+├── logo.jpg               # Logo principal
+└── icons/
+    ├── icon-192x192.png   # Icono estándar
+    ├── icon-512x512.png   # Icono grande
+    └── apple-touch-icon.png # Icono iOS
+```
+
+### Shortcuts Disponibles
+
+Desde el icono de la app en pantalla de inicio:
+- 🗓️ **Mis Sesiones** → `/profesional/sesiones`
+- 👶 **Mis Pacientes** → `/profesional/ninos`
+- 💵 **Liquidaciones** → `/admin/liquidaciones` (solo admin)
 
 ---
 

@@ -7,8 +7,6 @@ import { Card } from '@/components/ui/card'
 import {
   Baby,
   Calendar,
-  DollarSign,
-  Percent,
   Plus,
   AlertCircle,
   ArrowRight,
@@ -79,8 +77,6 @@ export default async function ProfessionalDashboardPage() {
     .single()
 
   const moduleValue = currentModule?.fee_value || 0
-  const estimatedBilling = totalSessions * moduleValue
-  const commission = estimatedBilling * 0.25
 
   const hasNoSessions = totalSessions === 0
 
@@ -97,7 +93,7 @@ export default async function ProfessionalDashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <Card variant="soft" className="text-center p-4">
           <Baby className="mx-auto mb-2 text-[#A38EC3]" size={24} />
           <p className="text-xl sm:text-2xl font-bold text-[#2D2A32]">{childrenCount}</p>
@@ -108,20 +104,6 @@ export default async function ProfessionalDashboardPage() {
           <p className="text-xl sm:text-2xl font-bold text-[#2D2A32]">{totalSessions}</p>
           <p className="text-xs text-[#6B6570]">Sesiones</p>
         </Card>
-        <Card variant="soft" className="text-center p-4">
-          <DollarSign className="mx-auto mb-2 text-[#A8E6CF]" size={24} />
-          <p className="text-xl sm:text-2xl font-bold text-[#2D2A32]">
-            ${estimatedBilling.toLocaleString('es-CL')}
-          </p>
-          <p className="text-xs text-[#6B6570]">Facturación</p>
-        </Card>
-        <Card variant="soft" className="text-center p-4">
-          <Percent className="mx-auto mb-2 text-[#F9E79F]" size={24} />
-          <p className="text-xl sm:text-2xl font-bold text-[#2D2A32]">
-            ${commission.toLocaleString('es-CL')}
-          </p>
-          <p className="text-xs text-[#6B6570]">Comisión 25%</p>
-        </Card>
       </div>
 
       {/* CTA Principal */}
@@ -131,16 +113,15 @@ export default async function ProfessionalDashboardPage() {
             ¡Comienza a cargar tus sesiones!
           </h3>
           <p className="text-sm text-white/80 mb-4">
-            Registra las sesiones realizadas este mes para mantener tu facturación actualizada
+            Registra las sesiones realizadas este mes para mantener tu registro actualizado
           </p>
           <Link href="/profesional/sesiones">
             <Button
               variant="secondary"
               className="bg-white text-[#A38EC3] hover:bg-white/90 w-full sm:w-auto"
             >
-              <Plus size={18} className="mr-2" />
+
               Cargar Sesiones
-              <ArrowRight size={18} className="ml-2" />
             </Button>
           </Link>
         </div>
@@ -159,7 +140,7 @@ export default async function ProfessionalDashboardPage() {
                 No has cargado sesiones este mes
               </h4>
               <p className="text-sm text-[#6B6570] mt-1">
-                Recuerda cargar las sesiones realizadas para mantener tu facturación actualizada.
+                Recuerda cargar las sesiones realizadas para mantener tu registro actualizado.
               </p>
             </div>
             <Link href="/profesional/sesiones" className="w-full sm:w-auto mt-2 sm:mt-0">

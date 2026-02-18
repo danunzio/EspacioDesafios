@@ -54,14 +54,14 @@ export function Header({
   };
 
   return (
-    <header className="sticky top-0 z-40 h-14 sm:h-16 bg-white shadow-sm">
+    <header className="sticky top-0 h-14 sm:h-16 bg-white shadow-sm z-sticky">
       <div className="flex items-center justify-between h-full px-4">
-        {/* Left section - Logo or Back button */}
         <div className="flex items-center justify-start flex-shrink-0 w-12">
           {showBack ? (
             <button
               onClick={onBack}
-              className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2.5 -ml-2 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A38EC3] min-h-[44px] min-w-[44px] flex items-center justify-center"
+              aria-label="Volver"
             >
               <ChevronLeft size={24} />
             </button>
@@ -78,24 +78,22 @@ export function Header({
           )}
         </div>
 
-        {/* Center section - Title */}
         <div className="flex-1 flex items-center justify-center px-4">
           <h1 className="text-base sm:text-lg font-semibold text-center truncate max-w-full">
             {title}
           </h1>
         </div>
 
-        {/* Right section - Notifications and Settings buttons */}
         <div className="flex items-center justify-end flex-shrink-0 gap-1">
           {showNotifications && (
             <button
               onClick={handleNotificationsClick}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors relative"
+              className="p-2.5 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition-colors relative focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A38EC3] min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Notificaciones"
             >
-              <Bell size={24} className="text-[#6B6570]" />
+              <Bell size={22} className="text-[#6B6570]" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -104,10 +102,10 @@ export function Header({
           {showSettings && (
             <button
               onClick={handleSettingsClick}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2.5 hover:bg-gray-100 active:bg-gray-200 rounded-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#A38EC3] min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Configuración"
             >
-              <Settings size={24} className="text-[#6B6570]" />
+              <Settings size={22} className="text-[#6B6570]" />
             </button>
           )}
         </div>

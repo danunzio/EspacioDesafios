@@ -42,14 +42,9 @@ export function LoginForm() {
   return (
     <Card className="w-full">
       <CardHeader className="text-center pb-2">
-        <div className="flex justify-center mb-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-3xl">
-            🧩
-          </div>
-        </div>
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Iniciar Sesión</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Espacio Desafíos
+        <h2 className="text-xl sm:text-2xl font-bold text-[#2D2A32]">Iniciar Sesión</h2>
+        <p className="text-sm text-[#6B6570] mt-1">
+          Ingresa tus credenciales para continuar
         </p>
       </CardHeader>
       <CardContent>
