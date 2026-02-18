@@ -1,0 +1,6 @@
+src/app/(dashboard)/profesional/facturacion/page.tsx(475,32): error TS2322: Type '"success" | "warning" | "danger"' is not assignable to type '"success" | "error" | "default" | "warning" | undefined'.
+  Type '"danger"' is not assignable to type '"success" | "error" | "default" | "warning" | undefined'.
+src/app/(dashboard)/profesional/facturacion/page.tsx(476,35): error TS2339: Property 'verification_status' does not exist on type 'PaymentData'.
+src/app/(dashboard)/profesional/facturacion/page.tsx(478,39): error TS2339: Property 'verification_status' does not exist on type 'PaymentData'.
+src/app/(dashboard)/profesional/facturacion/page.tsx(482,36): error TS2339: Property 'verification_status' does not exist on type 'PaymentData'.
+src/app/(dashboard)/profesional/facturacion/page.tsx(484,39): error TS2339: Property 'verification_status' does not exist on type 'PaymentData'.

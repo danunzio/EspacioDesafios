@@ -55,6 +55,7 @@ interface PaymentData {
   payment_type: 'efectivo' | 'transferencia';
   amount: number;
   notes?: string;
+  verification_status?: 'pending' | 'approved' | 'rejected';
 }
 
 // Simple bar chart component
@@ -476,7 +477,7 @@ export default function ProfessionalBillingPage() {
                           payment.verification_status === 'approved'
                             ? 'success'
                             : payment.verification_status === 'rejected'
-                              ? 'danger'
+                              ? 'error'
                               : 'warning'
                         }>
                           {payment.verification_status === 'approved'

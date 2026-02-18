@@ -314,7 +314,7 @@ export default function EstadisticasPage() {
                 <XAxis dataKey="month" stroke="#6B6570" />
                 <YAxis stroke="#6B6570" tickFormatter={(value) => `$${value / 1000}k`} />
                 <Tooltip
-                  formatter={(value: number | undefined) => formatCurrency(value || 0)}
+                  formatter={(value: any) => formatCurrency(Number(value) || 0)}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 />
                 <Legend />
@@ -361,7 +361,7 @@ export default function EstadisticasPage() {
                       <Cell key={`cell-${entry.name}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number | undefined) => formatCurrency(value || 0)} />
+                  <Tooltip formatter={(value: any) => formatCurrency(Number(value) || 0)} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -403,7 +403,7 @@ export default function EstadisticasPage() {
                       <Cell key={`cell-${entry.name}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number | undefined) => `${value || 0} pagos`} />
+                  <Tooltip formatter={(value: any) => `${value || 0} pagos`} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
