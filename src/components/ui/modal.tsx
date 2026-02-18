@@ -56,14 +56,22 @@ export function Modal({
     }
   }
 
+  const handleBackdropKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+      onClose()
+    }
+  }
+
   if (!isOpen) return null
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
       onClick={handleBackdropClick}
+      onKeyDown={handleBackdropKeyDown}
       aria-modal="true"
       role="dialog"
+      tabIndex={-1}
     >
       {/* Backdrop with blur effect */}
       <div 

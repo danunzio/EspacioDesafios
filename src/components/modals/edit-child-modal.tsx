@@ -333,10 +333,11 @@ export function EditChildModal({ isOpen, onClose, onSuccess, child }: EditChildM
 
 
               <div className="w-full">
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label htmlFor="health-insurance-select" className="block text-xs font-medium text-gray-700 mb-1">
                   Obra Social
                 </label>
                 <select
+                  id="health-insurance-select"
                   value={formData.health_insurance}
                   onChange={(e) => handleChange('health_insurance', e.target.value)}
                   className={`w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-300 focus:border-[#A38EC3] focus:ring-0 focus:outline-none ${errors.health_insurance ? 'border-red-500' : ''}`}
@@ -423,10 +424,11 @@ export function EditChildModal({ isOpen, onClose, onSuccess, child }: EditChildM
               )}
 
               <div className="w-full">
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label htmlFor="professional-select" className="block text-xs font-medium text-gray-700 mb-1">
                   Seleccionar profesionales
                 </label>
                 <select
+                  id="professional-select"
                   value=""
                   onChange={(e) => {
                     if (e.target.value) {

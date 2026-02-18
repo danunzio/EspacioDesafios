@@ -151,6 +151,14 @@ export function AdminProfessionalsClient({ initialProfessionals }: AdminProfessi
               key={professional.id}
               className="cursor-pointer"
               onClick={() => router.push(`/admin/profesionales/${professional.id}`)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  router.push(`/admin/profesionales/${professional.id}`)
+                }
+              }}
+              role="button"
+              tabIndex={0}
             >
               <Card className="p-4 hover:shadow-lg transition-shadow">
                 {/* Layout vertical para móvil */}

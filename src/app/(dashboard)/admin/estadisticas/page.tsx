@@ -1,52 +1,58 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  Legend
-} from 'recharts';
-import { 
-  TrendingUp, 
-  DollarSign, 
-  Users, 
+import { Badge } from '@/components/ui/badge';
+import {
+  TrendingUp,
+  DollarSign,
+  Users,
   Calendar,
   Download,
   Filter,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Wallet
 } from 'lucide-react';
+
+const BarChart = dynamic(() => import('recharts').then(mod => mod.BarChart), { ssr: false });
+const Bar = dynamic(() => import('recharts').then(mod => mod.Bar), { ssr: false });
+const XAxis = dynamic(() => import('recharts').then(mod => mod.XAxis), { ssr: false });
+const YAxis = dynamic(() => import('recharts').then(mod => mod.YAxis), { ssr: false });
+const CartesianGrid = dynamic(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false });
+const Tooltip = dynamic(() => import('recharts').then(mod => mod.Tooltip), { ssr: false });
+const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false });
+const PieChart = dynamic(() => import('recharts').then(mod => mod.PieChart), { ssr: false });
+const Pie = dynamic(() => import('recharts').then(mod => mod.Pie), { ssr: false });
+const Cell = dynamic(() => import('recharts').then(mod => mod.Cell), { ssr: false });
+const Legend = dynamic(() => import('recharts').then(mod => mod.Legend), { ssr: false });
 import { formatCurrency } from '@/lib/utils/calculations';
 import { MONTH_NAMES } from '@/types';
-import { 
-  getMonthlyStats, 
-  getProfessionalStats, 
+import {
+  getMonthlyStats,
+  getProfessionalStats,
   getDashboardStats,
-  getValueTypesDistribution
+  getValueTypesDistribution,
+  getFinancialHealth,
+  getPaymentStatusDistribution,
+  getProfessionalsWithoutPayments
 } from '@/lib/actions/statistics';
 
 export default function EstadisticasPage() {
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Data states
-  const [monthlyData, setMonthlyData] = useState<Array<{month: string; facturacion: number; sesiones: number; profesionales: number}>>([]);
-  const [professionalData, setProfessionalData] = useState<Array<{name: string; sesiones: number; facturacion: number}>>([]);
-  const [valueTypesData, setValueTypesData] = useState<Array<{name: string; value: number; color: string}>>([]);
+  const [monthlyData, setMonthlyData] = useState<Array<{ month: string; facturacion: number; sesiones: number; profesionales: number }>>([]);
+  const [professionalData, setProfessionalData] = useState<Array<{ name: string; sesiones: number; facturacion: number }>>([]);
+  const [valueTypesData, setValueTypesData] = useState<Array<{ name: string; value: number; color: string }>>([]);
+  const [financialData, setFinancialData] = useState<Array<{ month: string; income: number; expenses: number }>>([]);
+  const [paymentStatusData, setPaymentStatusData] = useState<Array<{ name: string; value: number; color: string }>>([]);
+  const [unpaidProfessionalsData, setUnpaidProfessionalsData] = useState<Array<{ id: string; full_name: string; email: string }>>([]);
   const [dashboardStats, setDashboardStats] = useState({
     totalFacturacion: 0,
     totalSesiones: 0,
@@ -100,11 +106,35 @@ export default function EstadisticasPage() {
         setDashboardStats({
           totalFacturacion: dashResult.data.currentMonthAmount,
           totalSesiones: dashResult.data.currentMonthSessions,
-          promedioSesiones: dashResult.data.currentMonthSessions > 0 
-            ? Math.round(dashResult.data.currentMonthSessions / (selectedMonth ? 1 : 12))
+          promedioSesiones: dashResult.data.currentMonthSessions > 0
+            ? Math.round(dashResult.data.currentMonthSessions / (selectedMonth || 12))
             : 0,
           profesionalesActivos: dashResult.data.activeProfessionals
         });
+      }
+
+      // Load financial health
+      const financialResult = await getFinancialHealth(selectedYear);
+      if (financialResult.success && financialResult.data) {
+        const formatted = financialResult.data.map(item => ({
+          month: MONTH_NAMES[item.month - 1].substring(0, 3),
+          income: item.income,
+          expenses: item.expenses
+        }));
+        setFinancialData(formatted);
+      }
+
+      // Load payment status distribution
+      const statusResult = await getPaymentStatusDistribution();
+      if (statusResult.success && statusResult.data) {
+        setPaymentStatusData(statusResult.data);
+      }
+
+      // Load professionals without payments
+      const targetMonthForUnpaid = selectedMonth || (new Date().getMonth() + 1);
+      const unpaidResult = await getProfessionalsWithoutPayments(selectedYear, targetMonthForUnpaid);
+      if (unpaidResult.success && unpaidResult.data) {
+        setUnpaidProfessionalsData(unpaidResult.data);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar estadísticas');
@@ -119,13 +149,13 @@ export default function EstadisticasPage() {
 
   // Calculate totals for display
   const displayStats = useMemo(() => {
-    const filteredData = selectedMonth 
+    const filteredData = selectedMonth
       ? monthlyData.filter(d => d.month === MONTH_NAMES[selectedMonth - 1].substring(0, 3))
       : monthlyData;
 
     const totalFacturacion = filteredData.reduce((acc, curr) => acc + curr.facturacion, 0);
     const totalSesiones = filteredData.reduce((acc, curr) => acc + curr.sesiones, 0);
-    const promedioSesiones = filteredData.length > 0 
+    const promedioSesiones = filteredData.length > 0
       ? Math.round(totalSesiones / filteredData.length)
       : 0;
 
@@ -138,18 +168,18 @@ export default function EstadisticasPage() {
   }, [monthlyData, selectedMonth, dashboardStats.profesionalesActivos]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in pb-20">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-[#2D2A32]">Estadísticas</h2>
           <p className="text-[#6B6570] mt-1">
-            Reportes visuales de facturación y volumen de sesiones
+            Reportes visuales de ingresos, gastos y volumen de sesiones
           </p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={loadStatistics}
             disabled={loading}
           >
@@ -198,7 +228,7 @@ export default function EstadisticasPage() {
 
       {/* Error Message */}
       {error && (
-        <Card className="bg-red-50 border-red-200">
+        <Card className="bg-red-50 border-red-200 p-4">
           <div className="flex items-center gap-2 text-red-600">
             <AlertCircle size={20} />
             <span>{error}</span>
@@ -263,42 +293,43 @@ export default function EstadisticasPage() {
         </Card>
       </div>
 
-      {/* Gráfico de Facturación Mensual */}
+      {/* Salud Financiera: Ingresos vs Gastos */}
       <Card>
         <div className="flex items-center gap-2 mb-6">
-          <TrendingUp className="text-[#A38EC3]" size={24} />
+          <TrendingUp className="text-[#8ED9B8]" size={24} />
           <h3 className="text-lg font-semibold text-[#2D2A32]">
-            Facturación Mensual {selectedYear}
+            Salud Financiera: Ingresos vs Gastos {selectedYear}
           </h3>
         </div>
         <div className="h-80">
           {loading ? (
             <div className="flex items-center justify-center h-full text-[#6B6570]">
               <RefreshCw size={24} className="animate-spin mr-2" />
-              Cargando datos...
+              Cargando datos financieros...
             </div>
-          ) : monthlyData.length > 0 ? (
+          ) : financialData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={selectedMonth ? monthlyData.filter(d => d.month === MONTH_NAMES[selectedMonth - 1].substring(0, 3)) : monthlyData}>
+              <BarChart data={financialData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E8E5F0" />
                 <XAxis dataKey="month" stroke="#6B6570" />
                 <YAxis stroke="#6B6570" tickFormatter={(value) => `$${value / 1000}k`} />
-                <Tooltip 
+                <Tooltip
                   formatter={(value: number | undefined) => formatCurrency(value || 0)}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 />
-                <Bar dataKey="facturacion" fill="#A38EC3" radius={[8, 8, 0, 0]} />
+                <Legend />
+                <Bar name="Ingresos (Pagos recibidos)" dataKey="income" fill="#8ED9B8" radius={[8, 8, 0, 0]} />
+                <Bar name="Gastos Operativos" dataKey="expenses" fill="#F4C2C2" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-full text-[#6B6570]">
-              No hay datos disponibles para el período seleccionado
+              No hay datos financieros para el período seleccionado
             </div>
           )}
         </div>
       </Card>
 
-      {/* Gráficos en Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Distribución por Tipo de Valor */}
         <Card>
@@ -326,8 +357,8 @@ export default function EstadisticasPage() {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {valueTypesData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    {valueTypesData.map((entry) => (
+                      <Cell key={`cell-${entry.name}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(value: number | undefined) => formatCurrency(value || 0)} />
@@ -342,12 +373,12 @@ export default function EstadisticasPage() {
           </div>
         </Card>
 
-        {/* Evolución de Sesiones */}
+        {/* Verificación de Pagos */}
         <Card>
           <div className="flex items-center gap-2 mb-6">
-            <Calendar className="text-[#A38EC3]" size={24} />
+            <Wallet className="text-[#A38EC3]" size={24} />
             <h3 className="text-lg font-semibold text-[#2D2A32]">
-              Evolución de Sesiones {selectedYear}
+              Estado de Pagos Recibidos
             </h3>
           </div>
           <div className="h-64">
@@ -356,62 +387,81 @@ export default function EstadisticasPage() {
                 <RefreshCw size={24} className="animate-spin mr-2" />
                 Cargando...
               </div>
-            ) : monthlyData.length > 0 ? (
+            ) : paymentStatusData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={selectedMonth ? monthlyData.filter(d => d.month === MONTH_NAMES[selectedMonth - 1].substring(0, 3)) : monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E8E5F0" />
-                  <XAxis dataKey="month" stroke="#6B6570" />
-                  <YAxis stroke="#6B6570" />
-                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="sesiones" 
-                    stroke="#A38EC3" 
-                    strokeWidth={3}
-                    dot={{ fill: '#A38EC3', strokeWidth: 2, r: 6 }}
-                  />
-                </LineChart>
+                <PieChart>
+                  <Pie
+                    data={paymentStatusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {paymentStatusData.map((entry) => (
+                      <Cell key={`cell-${entry.name}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number | undefined) => `${value || 0} pagos`} />
+                  <Legend />
+                </PieChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full text-[#6B6570]">
-                No hay datos disponibles
+                No hay pagos registrados
               </div>
             )}
           </div>
         </Card>
       </div>
 
-      {/* Rendimiento por Profesional */}
+      {/* Profesionales sin registro de pagos */}
       <Card>
         <div className="flex items-center gap-2 mb-6">
-          <Users className="text-[#A38EC3]" size={24} />
+          <AlertCircle className="text-[#E8A5A5]" size={24} />
           <h3 className="text-lg font-semibold text-[#2D2A32]">
-            Rendimiento por Profesional {selectedYear}
-            {selectedMonth && ` - ${MONTH_NAMES[selectedMonth - 1]}`}
+            Profesionales sin registro de pagos
+            <span className="text-sm font-normal text-[#6B6570] ml-2">
+              ({selectedMonth ? MONTH_NAMES[selectedMonth - 1] : MONTH_NAMES[new Date().getMonth()]})
+            </span>
           </h3>
         </div>
-        <div className="h-80">
+        <div className="max-h-80 overflow-y-auto pr-2 custom-scrollbar">
           {loading ? (
-            <div className="flex items-center justify-center h-full text-[#6B6570]">
+            <div className="flex items-center justify-center py-10 text-[#6B6570]">
               <RefreshCw size={24} className="animate-spin mr-2" />
               Cargando...
             </div>
-          ) : professionalData.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={professionalData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#E8E5F0" />
-                <XAxis type="number" stroke="#6B6570" tickFormatter={(value) => `$${value / 1000}k`} />
-                <YAxis dataKey="name" type="category" stroke="#6B6570" width={150} />
-                <Tooltip 
-                  formatter={(value: number | undefined) => formatCurrency(value || 0)}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                />
-                <Bar dataKey="facturacion" fill="#A38EC3" radius={[0, 8, 8, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          ) : unpaidProfessionalsData.length > 0 ? (
+            <div className="space-y-3">
+              {unpaidProfessionalsData.map((prof) => (
+                <div
+                  key={prof.id}
+                  className="flex items-center justify-between p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-[#A38EC3]/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#A38EC3]/10 flex items-center justify-center text-[#A38EC3] font-bold">
+                      {prof.full_name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-[#2D2A32]">{prof.full_name}</p>
+                      <p className="text-xs text-[#6B6570]">{prof.email}</p>
+                    </div>
+                  </div>
+                  <Badge variant="error" className="bg-red-50 text-red-600 border-red-200">
+                    Sin registros
+                  </Badge>
+                </div>
+              ))}
+            </div>
           ) : (
-            <div className="flex items-center justify-center h-full text-[#6B6570]">
-              No hay datos de profesionales para el período seleccionado
+            <div className="flex flex-col items-center justify-center py-10 text-[#6B6570] text-center">
+              <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-3">
+                <Wallet className="text-green-500" size={32} />
+              </div>
+              <p className="font-medium text-[#2D2A32]">¡Todo al día!</p>
+              <p className="text-sm">Todos los profesionales activos han registrado pagos este periodo.</p>
             </div>
           )}
         </div>

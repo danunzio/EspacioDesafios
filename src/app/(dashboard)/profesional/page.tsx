@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { MonthlySummary } from '@/components/professional/monthly-summary'
+
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
@@ -134,8 +134,8 @@ export default async function ProfessionalDashboardPage() {
             Registra las sesiones realizadas este mes para mantener tu facturación actualizada
           </p>
           <Link href="/profesional/sesiones">
-            <Button 
-              variant="secondary" 
+            <Button
+              variant="secondary"
               className="bg-white text-[#A38EC3] hover:bg-white/90 w-full sm:w-auto"
             >
               <Plus size={18} className="mr-2" />
@@ -146,33 +146,9 @@ export default async function ProfessionalDashboardPage() {
         </div>
       </Card>
 
-      <MonthlySummary
-        sessions={monthlySessions || []}
-        moduleValue={moduleValue}
-        childrenCount={childrenCount}
-      />
 
-      <Card className="bg-gradient-to-r from-[#A38EC3]/10 to-[#F4C2C2]/10">
-        <div className="text-center sm:text-left">
-          <h3 className="text-lg font-semibold text-[#2D2A32] mb-4">
-            Acciones Rápidas
-          </h3>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Link href="/profesional/sesiones" className="w-full sm:w-auto">
-              <Button variant="primary" className="w-full">
-                <Plus size={18} className="mr-2" />
-                Cargar Sesiones
-              </Button>
-            </Link>
-            <Link href="/profesional/ninos" className="w-full sm:w-auto">
-              <Button variant="secondary" className="w-full">
-                <Baby size={18} className="mr-2" />
-                Ver Mis Pacientes
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </Card>
+
+
 
       {hasNoSessions && (
         <Card className="border-2 border-[#F4C2C2] bg-[#F4C2C2]/10">

@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Users, Baby, Settings, DollarSign, Calendar, Receipt, TrendingDown, BarChart3 } from 'lucide-react';
+import { Home, Users, Baby, Settings, DollarSign, Calendar, Receipt, TrendingDown, BarChart3, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BottomNavProps {

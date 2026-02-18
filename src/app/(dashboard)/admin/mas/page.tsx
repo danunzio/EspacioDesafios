@@ -23,7 +23,8 @@ import {
   Edit,
   Trash,
   Power,
-  X
+  X,
+  Wallet
 } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 
@@ -50,6 +51,22 @@ const menuItems = [
     href: '/admin/estadisticas',
     icon: BarChart3,
     color: '#8ED9B8',
+    subIcons: []
+  },
+  {
+    title: 'Liquidaciones',
+    description: 'Calcula y gestiona las liquidaciones mensuales',
+    href: '/admin/liquidaciones',
+    icon: DollarSign,
+    color: '#8ED9B8',
+    subIcons: []
+  },
+  {
+    title: 'Pagos de Profesionales',
+    description: 'Verifica y aprueba los pagos registrados por el equipo',
+    href: '/admin/pagos',
+    icon: Wallet,
+    color: '#A38EC3',
     subIcons: []
   },
 ];
@@ -461,8 +478,8 @@ export default function AdminMorePage() {
                   <Button
                     variant="outline"
                     className={`justify-start gap-3 h-12 rounded-xl ${selectedInsurance.is_active
-                        ? 'text-amber-600 border-amber-100 hover:bg-amber-50'
-                        : 'text-green-600 border-green-100 hover:bg-green-50'
+                      ? 'text-amber-600 border-amber-100 hover:bg-amber-50'
+                      : 'text-green-600 border-green-100 hover:bg-green-50'
                       }`}
                     onClick={async () => {
                       await handleToggleActive(selectedInsurance);

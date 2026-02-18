@@ -714,6 +714,9 @@ CREATE TABLE payments_to_clinic (
   payment_type TEXT NOT NULL CHECK (payment_type IN ('efectivo', 'transferencia')),
   amount DECIMAL(10, 2) NOT NULL,
   notes TEXT,
+  verification_status TEXT NOT NULL DEFAULT 'pending' CHECK (verification_status IN ('pending', 'approved', 'rejected')),
+  verified_by UUID REFERENCES profiles(id),
+  verified_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -721,6 +724,7 @@ CREATE TABLE payments_to_clinic (
 CREATE INDEX idx_payments_clinic_professional ON payments_to_clinic(professional_id);
 CREATE INDEX idx_payments_clinic_year_month ON payments_to_clinic(year, month);
 CREATE INDEX idx_payments_clinic_date ON payments_to_clinic(payment_date);
+CREATE INDEX idx_payments_clinic_verification_status ON payments_to_clinic(verification_status);
 
 -- Enable RLS on payments_to_clinic
 ALTER TABLE payments_to_clinic ENABLE ROW LEVEL SECURITY;

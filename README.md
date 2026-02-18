@@ -515,7 +515,11 @@ espacio-desafios/
 4. **Valores**: Historial mensual editable (añadir, editar, eliminar valores)
 5. **Liquidaciones**: Filtros por año, mes y profesional
 6. **Consumos**: Registro de gastos (Luz, Gas, Fotocopias, etc.) con balance mensual
-7. **Gestión de Niños**:
+7. **Estadísticas**: 
+   - Reportes de salud financiera (Ingresos vs Gastos)
+   - Seguimiento de profesionales sin registro de pagos
+   - Distribución por tipo de valor y estados de pago
+8. **Gestión de Niños**:
    - **Listado**: Filtrado por profesional, click en "Editar" para abrir modal
    - **Edición**: Modal con todos los campos, incluye botón para eliminar paciente
 

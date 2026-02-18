@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default async function DebugPage() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY 
@@ -15,7 +17,7 @@ export default async function DebugPage() {
         }, null, 2)}
       </pre>
       <p>
-        <a href="/login" style={{ color: 'blue' }}>Go to Login</a>
+        <Link href="/login" style={{ color: 'blue' }}>Go to Login</Link>
       </p>
     </div>
   );

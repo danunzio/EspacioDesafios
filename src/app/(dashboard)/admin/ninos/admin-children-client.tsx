@@ -269,9 +269,9 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
                       )}
                     </div>
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {(child.professional_names ?? []).map((name, index) => (
+                      {(child.professional_names ?? []).map((name) => (
                         <span
-                          key={index}
+                          key={name}
                           className="text-xs px-2 py-1 bg-[#A38EC3]/10 text-[#A38EC3] rounded-full"
                         >
                           {name}

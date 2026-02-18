@@ -42,11 +42,15 @@ export function StatsCard({
   subtitle,
   icon: Icon,
   color = 'default',
-}: StatsCardProps) {
+  onClick,
+}: StatsCardProps & { onClick?: () => void }) {
   const styles = colorStyles[color]
 
   return (
-    <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md sm:shadow-lg p-4 sm:p-6 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5">
+    <div
+      onClick={onClick}
+      className={`bg-white rounded-2xl sm:rounded-3xl shadow-md sm:shadow-lg p-4 sm:p-6 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 ${onClick ? 'cursor-pointer active:scale-95' : ''}`}
+    >
       <div className="flex items-center gap-3">
         <div
           className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 ${styles.bg}`}

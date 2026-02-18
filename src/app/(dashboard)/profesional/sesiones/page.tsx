@@ -60,8 +60,8 @@ interface ProfessionalModuleConfig {
 export default function ProfessionalSessionsPage() {
   const supabase = createClient();
   const { user, profile, loading: authLoading } = useAuth();
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [year, setYear] = useState(() => new Date().getFullYear());
+  const [month, setMonth] = useState(() => new Date().getMonth() + 1);
   const [sessions, setSessions] = useState<SessionData[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -330,10 +330,11 @@ export default function ProfessionalSessionsPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="year-select" className="block text-sm font-medium text-gray-700 mb-1">
               Año
             </label>
             <select
+              id="year-select"
               value={year}
               onChange={(e) => setYear(parseInt(e.target.value))}
               className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none bg-white"
@@ -347,10 +348,11 @@ export default function ProfessionalSessionsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="month-select" className="block text-sm font-medium text-gray-700 mb-1">
               Mes
             </label>
             <select
+              id="month-select"
               value={month}
               onChange={(e) => setMonth(parseInt(e.target.value))}
               className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none bg-white"

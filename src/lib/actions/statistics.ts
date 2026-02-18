@@ -333,6 +333,88 @@ export async function getDashboardStats(): Promise<{ success: boolean; data?: Da
 }
 
 /**
+ * Get financial health data (Income vs Expenses)
+ * @param year - The year
+ * @returns Monthly income vs expenses
+ */
+export async function getFinancialHealth(
+  year: number
+): Promise<{ success: boolean; data?: Array<{ month: number; income: number; expenses: number }>; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    // Get payments to clinic (income)
+    const { data: payments, error: paymentsError } = await supabase
+      .from('payments_to_clinic')
+      .select('month, amount')
+      .eq('year', year)
+      .eq('verification_status', 'approved');
+
+    if (paymentsError) throw new Error(`Error income: ${paymentsError.message}`);
+
+    // Get expenses
+    const { data: expenses, error: expensesError } = await supabase
+      .from('expenses')
+      .select('month, amount')
+      .eq('year', year);
+
+    if (expensesError) throw new Error(`Error expenses: ${expensesError.message}`);
+
+    const monthlyFinancials = Array.from({ length: 12 }, (_, i) => ({
+      month: i + 1,
+      income: 0,
+      expenses: 0
+    }));
+
+    for (const payment of payments || []) {
+      monthlyFinancials[payment.month - 1].income += Number(payment.amount);
+    }
+
+    for (const expense of expenses || []) {
+      monthlyFinancials[expense.month - 1].expenses += Number(expense.amount);
+    }
+
+    return { success: true, data: monthlyFinancials };
+  } catch (error) {
+    console.error('Error financial health:', error);
+    return { success: false, error: 'Error al obtener salud financiera' };
+  }
+}
+
+/**
+ * Get payment verification status distribution
+ * @returns Status counts
+ */
+export async function getPaymentStatusDistribution(): Promise<{ success: boolean; data?: Array<{ name: string; value: number; color: string }>; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from('payments_to_clinic')
+      .select('verification_status');
+
+    if (error) throw new Error(error.message);
+
+    const counts = {
+      pending: data?.filter(p => p.verification_status === 'pending').length || 0,
+      approved: data?.filter(p => p.verification_status === 'approved').length || 0,
+      rejected: data?.filter(p => p.verification_status === 'rejected').length || 0,
+    };
+
+    const result = [
+      { name: 'Pendientes', value: counts.pending, color: '#F9E79F' },
+      { name: 'Aprobados', value: counts.approved, color: '#A8E6CF' },
+      { name: 'Rechazados', value: counts.rejected, color: '#F4C2C2' },
+    ];
+
+    return { success: true, data: result.filter(r => r.value > 0) };
+  } catch (error) {
+    console.error('Error payment status:', error);
+    return { success: false, error: 'Error al obtener estado de pagos' };
+  }
+}
+
+/**
  * Get value types distribution
  * @returns Distribution of values by type
  */
@@ -395,6 +477,55 @@ export async function getValueTypesDistribution(): Promise<{ success: boolean; d
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Error al obtener distribución de valores'
+    };
+  }
+}
+
+/**
+ * Get professionals who haven't registered any payments in a given period
+ * @param year - The year
+ * @param month - The month
+ * @returns List of professionals without payments
+ */
+export async function getProfessionalsWithoutPayments(
+  year: number,
+  month: number
+): Promise<{ success: boolean; data?: Array<{ id: string; full_name: string; email: string }>; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    // 1. Get all active professionals
+    const { data: professionals, error: profError } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .eq('role', 'professional')
+      .eq('is_active', true);
+
+    if (profError) throw new Error(`Error fetching professionals: ${profError.message}`);
+
+    // 2. Get distinct professional_ids who actually registered payments in this period
+    const { data: payments, error: payError } = await supabase
+      .from('payments_to_clinic')
+      .select('professional_id')
+      .eq('year', year)
+      .eq('month', month);
+
+    if (payError) throw new Error(`Error fetching payments: ${payError.message}`);
+
+    const paidProfessionalIds = new Set(payments?.map(p => p.professional_id) || []);
+
+    // 3. Filter those who are NOT in the paid list
+    const unpaidProfessionals = professionals?.filter(p => !paidProfessionalIds.has(p.id)) || [];
+
+    return {
+      success: true,
+      data: unpaidProfessionals
+    };
+  } catch (error) {
+    console.error('Error fetching professionals without payments:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al obtener profesionales sin pagos'
     };
   }
 }

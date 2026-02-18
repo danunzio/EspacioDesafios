@@ -71,10 +71,14 @@ export async function createPaymentToClinic(
       .single();
 
     // Find admin users to notify
-    const { data: admins } = await supabase
+    const { data: admins, error: adminsError } = await supabase
       .from('profiles')
       .select('id')
       .eq('role', 'admin');
+
+    if (adminsError) {
+      console.error('Error fetching admins for notification:', adminsError);
+    }
 
     if (admins && admins.length > 0) {
       // Create notifications for all admins
@@ -85,6 +89,7 @@ export async function createPaymentToClinic(
         type: 'success' as const,
       }));
 
+      console.log(`Enviando ${notifications.length} notificaciones a los administradores...`);
       const { error: notifError } = await supabase
         .from('notifications')
         .insert(notifications);
@@ -93,6 +98,8 @@ export async function createPaymentToClinic(
         console.error('Error creating notifications:', notifError);
         // Don't throw here, payment was successful
       }
+    } else {
+      console.log('No se encontraron administradores para notificar.');
     }
 
     revalidatePath('/profesional/facturacion');
@@ -174,7 +181,7 @@ export async function getAllPaymentsToClinic(
       .from('payments_to_clinic')
       .select(`
         *,
-        professional:profiles(full_name, email)
+        professional:profiles!payments_to_clinic_professional_id_fkey(full_name, email)
       `)
       .order('payment_date', { ascending: false });
 
@@ -244,28 +251,41 @@ export async function reviewPaymentToClinic(
       throw new Error(`Error updating payment: ${updateError.message}`);
     }
 
+    // Notificar al profesional
     const { data: professional } = await supabase
       .from('profiles')
       .select('id, full_name')
       .eq('id', payment.professional_id)
       .single();
 
-    if (professional?.id) {
-      await supabase
+    if (professional) {
+      const amountFormatted = new Intl.NumberFormat('es-CL', {
+        style: 'currency',
+        currency: 'CLP',
+      }).format(payment.amount);
+
+      const title = status === 'approved' ? '✅ Pago verificado' : '❌ Pago rechazado';
+      const message = status === 'approved'
+        ? `¡Hola ${professional.full_name.split(' ')[0]}! Tu pago de ${amountFormatted} ha sido verificado satisfactoriamente por administración.`
+        : `Lamentamos informarte que tu pago de ${amountFormatted} ha sido rechazado. Por favor, revisa los detalles o contacta a administración.`;
+
+      const { error: notifError } = await supabase
         .from('notifications')
         .insert({
           user_id: professional.id,
-          title: status === 'approved' ? 'Pago verificado' : 'Pago rechazado',
-          message:
-            status === 'approved'
-              ? `Tu pago de ${payment.amount.toLocaleString('es-CL')} ha sido verificado por administración.`
-              : `Tu pago de ${payment.amount.toLocaleString('es-CL')} ha sido rechazado por administración.`,
+          title,
+          message,
           type: status === 'approved' ? 'success' : 'error',
         });
+
+      if (notifError) {
+        console.error('Error enviando notificación al profesional:', notifError);
+      }
     }
 
     revalidatePath('/admin/pagos');
     revalidatePath('/profesional/facturacion');
+    revalidatePath('/profesional/notificaciones');
     return { success: true };
   } catch (error) {
     console.error('Error reviewing payment to clinic:', error);

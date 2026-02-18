@@ -20,7 +20,7 @@ export function SessionRow({
   previousMonthCount,
   onChange,
 }: SessionRowProps) {
-  const [localValue, setLocalValue] = useState(sessionCount.toString());
+  const [localValue, setLocalValue] = useState(() => sessionCount.toString());
 
   const handleChange = (value: string) => {
     // Allow empty string for better UX while typing

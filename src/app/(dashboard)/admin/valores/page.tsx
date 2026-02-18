@@ -60,8 +60,8 @@ const valueTypeLabels: Record<ValueType, { label: string; icon: typeof FileText;
 export default function AdminValuesPage() {
   const [values, setValues] = useState<ValueHistory[]>([]);
   const [selectedType, setSelectedType] = useState<ValueType>('nomenclatura');
-  const [year, setYear] = useState(new Date().getFullYear());
-  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [year, setYear] = useState(() => new Date().getFullYear());
+  const [month, setMonth] = useState(() => new Date().getMonth() + 1);
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -285,10 +285,11 @@ export default function AdminValuesPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="year-select" className="block text-sm font-medium text-gray-700 mb-1">
                   Año
                 </label>
                 <select
+                  id="year-select"
                   value={year}
                   onChange={(e) => setYear(parseInt(e.target.value))}
                   className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none bg-white"
@@ -303,10 +304,11 @@ export default function AdminValuesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="month-select" className="block text-sm font-medium text-gray-700 mb-1">
                   Mes
                 </label>
                 <select
+                  id="month-select"
                   value={month}
                   onChange={(e) => setMonth(parseInt(e.target.value))}
                   className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none bg-white"
@@ -321,7 +323,7 @@ export default function AdminValuesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="value-input" className="block text-sm font-medium text-gray-700 mb-1">
                   Valor ($)
                 </label>
                 <div className="relative">
@@ -329,6 +331,7 @@ export default function AdminValuesPage() {
                     $
                   </span>
                   <input
+                    id="value-input"
                     type="number"
                     placeholder="45000"
                     value={value}
@@ -337,7 +340,6 @@ export default function AdminValuesPage() {
                     min="1"
                     step="0.01"
                     disabled={loading}
-                    autoFocus
                   />
                 </div>
               </div>

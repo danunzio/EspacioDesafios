@@ -112,8 +112,16 @@ export function ConfiguracionClient({ profile, userEmail }: ConfiguracionClientP
                 <div
                   key={item.label}
                   onClick={item.action || undefined}
+                  onKeyDown={item.action ? (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      item.action?.()
+                    }
+                  } : undefined}
+                  role={item.action ? 'button' : undefined}
+                  tabIndex={item.action ? 0 : undefined}
                   className={`flex items-center gap-3 px-4 py-4 ${
-                    item.action ? 'hover:bg-gray-50 cursor-pointer' : ''
+                    item.action ? 'hover:bg-gray-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#A38EC3] focus:ring-inset' : ''
                   }`}
                 >
                   <div className="w-10 h-10 rounded-full bg-[#A38EC3]/10 flex items-center justify-center flex-shrink-0">

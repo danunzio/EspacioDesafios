@@ -54,6 +54,11 @@ export default async function AdminDashboardPage() {
     .eq('month', currentMonth)
     .eq('year', currentYear)
 
+  const { count: pendingPayments } = await supabase
+    .from('payments_to_clinic')
+    .select('*', { count: 'exact', head: true })
+    .eq('verification_status', 'pending')
+
   const { data: recentActivity } = await supabase
     .from('monthly_sessions')
     .select(`
@@ -68,7 +73,7 @@ export default async function AdminDashboardPage() {
     .from('payments_to_clinic')
     .select(`
       *,
-      profiles:professional_id(full_name)
+      profiles:profiles!payments_to_clinic_professional_id_fkey(full_name)
     `)
     .order('payment_date', { ascending: false })
     .limit(5)
@@ -76,28 +81,31 @@ export default async function AdminDashboardPage() {
   const combinedRecent = [
     ...(recentActivity || []).map(a => ({
       id: a.id,
-      kind: 'sesion',
+      kind: 'sesion' as const,
       children: a.children,
       profiles: a.profiles,
       session_count: a.session_count,
-      total_amount: a.total_amount
+      total_amount: a.total_amount,
+      created_at: a.created_at
     })),
     ...(recentPayments || []).map(p => ({
       id: p.id,
-      kind: 'pago',
+      kind: 'pago' as const,
       children: null,
       profiles: p.profiles,
       session_count: 0,
       total_amount: p.amount,
-      payment_type: p.payment_type
+      payment_type: p.payment_type,
+      created_at: p.created_at
     })),
-  ]
+  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
   const stats = {
     totalProfessionals: totalProfessionals || 0,
     totalActiveChildren: totalActiveChildren || 0,
     currentModule,
     pendingLiquidations: pendingLiquidations || 0,
+    pendingPayments: pendingPayments || 0,
   }
 
   return (

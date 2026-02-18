@@ -85,8 +85,8 @@ function MiniBarChart({ data }: { data: number[] }) {
 
 export default function ProfessionalBillingPage() {
   const { user } = useAuth();
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth() + 1);
   const [payments, setPayments] = useState<PaymentData[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -217,18 +217,18 @@ export default function ProfessionalBillingPage() {
   const handlePrevMonth = () => {
     if (selectedMonth === 1) {
       setSelectedMonth(12);
-      setSelectedYear(selectedYear - 1);
+      setSelectedYear(prev => prev - 1);
     } else {
-      setSelectedMonth(selectedMonth - 1);
+      setSelectedMonth(prev => prev - 1);
     }
   };
 
   const handleNextMonth = () => {
     if (selectedMonth === 12) {
       setSelectedMonth(1);
-      setSelectedYear(selectedYear + 1);
+      setSelectedYear(prev => prev + 1);
     } else {
-      setSelectedMonth(selectedMonth + 1);
+      setSelectedMonth(prev => prev + 1);
     }
   };
 
@@ -346,9 +346,9 @@ export default function ProfessionalBillingPage() {
             </div>
 
             <div className="space-y-3">
-              {displayBilling.module_breakdown.map((module, index) => (
+              {displayBilling.module_breakdown.map((module) => (
                 <div
-                  key={index}
+                  key={`${module.moduleName}-${module.sessionCount}`}
                   className="bg-white rounded-2xl p-4 shadow-sm"
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -519,7 +519,7 @@ export default function ProfessionalBillingPage() {
                     className="w-full"
                   >
                     <DollarSign size={18} className="mr-2" />
-                    Registrar Pago
+                    Informar Pago
                   </Button>
                 </div>
               ) : (
@@ -536,10 +536,11 @@ export default function ProfessionalBillingPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="payment-date" className="block text-sm font-medium text-gray-700 mb-1">
                         Fecha de pago
                       </label>
                       <input
+                        id="payment-date"
                         type="date"
                         value={paymentDate}
                         onChange={(e) => setPaymentDate(e.target.value)}
@@ -548,10 +549,11 @@ export default function ProfessionalBillingPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="payment-type" className="block text-sm font-medium text-gray-700 mb-1">
                         Tipo de pago
                       </label>
                       <select
+                        id="payment-type"
                         value={paymentType}
                         onChange={(e) => setPaymentType(e.target.value as 'efectivo' | 'transferencia')}
                         className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none bg-white"
@@ -563,12 +565,13 @@ export default function ProfessionalBillingPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="payment-amount" className="block text-sm font-medium text-gray-700 mb-1">
                       Importe ($)
                     </label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A94A0]">$</span>
                       <input
+                        id="payment-amount"
                         type="number"
                         value={paymentAmount}
                         onChange={(e) => setPaymentAmount(e.target.value)}
@@ -586,10 +589,11 @@ export default function ProfessionalBillingPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="payment-notes" className="block text-sm font-medium text-gray-700 mb-1">
                       Notas (opcional)
                     </label>
                     <textarea
+                      id="payment-notes"
                       value={paymentNotes}
                       onChange={(e) => setPaymentNotes(e.target.value)}
                       placeholder="Número de transferencia, comprobante, etc."
@@ -606,7 +610,7 @@ export default function ProfessionalBillingPage() {
                       className="w-full"
                     >
                       <Save size={18} className="mr-2" />
-                      {saving ? 'Guardando...' : 'Confirmar Pago'}
+                      {saving ? 'Guardando...' : 'Informar pago Pago'}
                     </Button>
                   </div>
 

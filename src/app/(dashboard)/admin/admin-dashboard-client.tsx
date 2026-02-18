@@ -12,6 +12,8 @@ import {
   Plus,
   TrendingDown,
   TrendingUp,
+  Wallet,
+  CheckCircle,
 } from 'lucide-react'
 
 interface Profile {
@@ -33,6 +35,7 @@ interface RecentActivity {
   payment_type?: 'efectivo' | 'transferencia'
   children?: { full_name: string } | null
   profiles?: { full_name: string } | null
+  created_at: string
 }
 
 interface AdminDashboardClientProps {
@@ -42,6 +45,7 @@ interface AdminDashboardClientProps {
     totalActiveChildren: number
     currentModule: ModuleValue | null
     pendingLiquidations: number
+    pendingPayments: number
   }
   recentActivity: RecentActivity[] | null
 }
@@ -94,12 +98,21 @@ export function AdminDashboardClient({
           subtitle="Pendientes"
           icon={FileText}
           color="yellow"
+          onClick={() => router.push('/admin/liquidaciones')}
+        />
+        <StatsCard
+          title="Pagos por verificar"
+          value={stats.pendingPayments}
+          subtitle="Por revisar"
+          icon={Wallet}
+          color="purple"
+          onClick={() => router.push('/admin/pagos')}
         />
       </div>
 
       {/* Acción Rápida - Agregar Gasto */}
-      <Card 
-        variant="soft" 
+      <Card
+        variant="soft"
         className="bg-gradient-to-r from-[#E8A5A5]/10 to-[#F4C2C2]/10 cursor-pointer hover:shadow-md transition-shadow"
         onClick={() => router.push('/admin/consumos')}
       >
@@ -130,7 +143,7 @@ export function AdminDashboardClient({
             Actividad Reciente
           </h3>
         </div>
-        
+
         {recentActivity && recentActivity.length > 0 ? (
           <div className="space-y-3">
             {recentActivity.map((activity) => (
@@ -159,9 +172,14 @@ export function AdminDashboardClient({
                     </>
                   )}
                 </div>
-                <span className="text-sm font-medium text-[#A38EC3] text-right">
-                  ${activity.total_amount?.toLocaleString('es-CL')}
-                </span>
+                <div className="flex flex-col items-end gap-1">
+                  <span className="text-sm font-medium text-[#A38EC3]">
+                    ${activity.total_amount?.toLocaleString('es-CL')}
+                  </span>
+                  <span className="text-[10px] text-[#9A94A0]">
+                    {new Date(activity.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
               </div>
             ))}
           </div>

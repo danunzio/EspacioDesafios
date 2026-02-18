@@ -482,11 +482,10 @@ export function ProfessionalDetailClient({
                             value={commissionPercentage}
                             onChange={(e) => setCommissionPercentage(e.target.value)}
                             className="w-24 px-3 py-1 rounded-lg border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none text-sm"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            autoFocus
-                          />
+                             min="0"
+                             max="100"
+                             step="0.01"
+                           />
                           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9A94A0] text-xs">%</span>
                         </div>
                         <button
@@ -578,7 +577,18 @@ export function ProfessionalDetailClient({
                   className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex-1 cursor-pointer" onClick={() => router.push(`/admin/ninos/${child.id}`)}>
+                    <div
+                      className="flex-1 cursor-pointer"
+                      onClick={() => router.push(`/admin/ninos/${child.id}`)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          router.push(`/admin/ninos/${child.id}`)
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                    >
                       <p className="font-medium text-[#2D2A32]">{child.full_name}</p>
                       <p className="text-sm text-[#6B6570]">
                         {child.health_insurance || 'Sin obra social'} • {child.guardian_name}

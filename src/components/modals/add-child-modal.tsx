@@ -249,10 +249,11 @@ export function AddChildModal({ isOpen, onClose, onSuccess }: AddChildModalProps
 
 
               <div className="w-full">
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label htmlFor="child-health-insurance" className="block text-xs font-medium text-gray-700 mb-1">
                   Obra Social
                 </label>
                 <select
+                  id="child-health-insurance"
                   value={formData.health_insurance}
                   onChange={(e) => handleChange('health_insurance', e.target.value)}
                   className={`w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-300 focus:border-[#A38EC3] focus:ring-0 focus:outline-none ${errors.health_insurance ? 'border-red-500' : ''}`}
@@ -338,10 +339,11 @@ export function AddChildModal({ isOpen, onClose, onSuccess }: AddChildModalProps
               )}
 
               <div className="w-full">
-                <label className="block text-xs font-medium text-gray-700 mb-1">
+                <label htmlFor="add-professional-select" className="block text-xs font-medium text-gray-700 mb-1">
                   Seleccionar profesionales
                 </label>
                 <select
+                  id="add-professional-select"
                   value=""
                   onChange={(e) => {
                     if (e.target.value) {

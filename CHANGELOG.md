@@ -7,6 +7,21 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [1.0.4] - 2026-02-18
+
+### ✨ Agregado
+
+- **Reporte de Profesionales sin Pagos** en `/admin/estadisticas`:
+  - Se reemplazó el gráfico de sesiones por una sección dinámica de profesionales que aún no han registrado sus pagos mensuales.
+  - Permite identificar rápidamente quiénes tienen saldos pendientes por reportar.
+- **Nuevos gráficos financieros**:
+  - Implementación de Salud Financiera (Ingresos vs Gastos).
+  - Distribución de estados de verificación de pagos.
+- **Simplificación de Interfaz**:
+  - Se eliminó el gráfico de Evolución de Sesiones para enfocar la pantalla en el control de pagos y salud financiera.
+- **Notificaciones automáticas**:
+  - El profesional recibe una notificación instantánea en su panel cuando administración aprueba o rechaza un pago registrado.
+
 ## [1.0.3] - 2026-02-18
 
 ### ✨ Agregado
