@@ -20,6 +20,7 @@ export interface Expense {
   category: string;
   description: string;
   amount: number;
+  registered_by?: string;
   created_at: string;
   updated_at: string;
 }

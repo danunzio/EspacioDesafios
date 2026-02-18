@@ -43,7 +43,7 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
   const [success, setSuccess] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
+  const [showPassword] = useState(true)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   const supabase = createClient()
@@ -54,7 +54,6 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
       setFormData(initialFormData)
       setErrors({})
       setSuccess(false)
-      setShowPassword(false)
       setToast(null)
     }
   }, [isOpen])
@@ -247,26 +246,15 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
               error={errors.phone}
             />
 
-            <div className="relative">
-              <Input
-                label="Contraseña"
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={(e) => handleChange('password', e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-                required
-                error={errors.password}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-[31px] p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                tabIndex={-1}
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
+            <Input
+              label="Contraseña"
+              type="text"
+              value={formData.password}
+              onChange={(e) => handleChange('password', e.target.value)}
+              placeholder="Mínimo 6 caracteres"
+              required
+              error={errors.password}
+            />
 
             <div className="flex flex-col-reverse sm:flex-row gap-3 pt-6">
               <Button

@@ -83,10 +83,10 @@ export async function getMonthlyStats(
       const count = session.session_count || 0;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const moduleData = session.module as any;
-      const rate = Array.isArray(moduleData) 
-        ? moduleData[0]?.base_value || 0 
+      const rate = Array.isArray(moduleData)
+        ? moduleData[0]?.base_value || 0
         : moduleData?.base_value || 0;
-      
+
       const stat = statsMap.get(month);
       if (stat) {
         stat.totalSessions += count;
@@ -100,12 +100,12 @@ export async function getMonthlyStats(
 
     for (const data of monthlyData || []) {
       const month = data.month;
-      
+
       if (!monthProfessionals.has(month)) {
         monthProfessionals.set(month, new Set());
         monthChildren.set(month, new Set());
       }
-      
+
       monthProfessionals.get(month)?.add(data.professional_id);
       monthChildren.get(month)?.add(data.child_id);
     }
@@ -178,14 +178,14 @@ export async function getProfessionalStats(
       const profId = item.professional_id;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const profData = item.professional as any;
-      const profName = Array.isArray(profData) 
+      const profName = Array.isArray(profData)
         ? profData[0]?.full_name || 'Desconocido'
         : profData?.full_name || 'Desconocido';
       const count = item.session_count || 0;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const moduleData = item.module as any;
-      const rate = Array.isArray(moduleData) 
-        ? moduleData[0]?.base_value || 0 
+      const rate = Array.isArray(moduleData)
+        ? moduleData[0]?.base_value || 0
         : moduleData?.base_value || 0;
 
       if (!statsMap.has(profId)) {
@@ -288,10 +288,10 @@ export async function getDashboardStats(): Promise<{ success: boolean; data?: Da
       const count = session.session_count || 0;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const moduleData = session.module as any;
-      const rate = Array.isArray(moduleData) 
-        ? moduleData[0]?.base_value || 0 
+      const rate = Array.isArray(moduleData)
+        ? moduleData[0]?.base_value || 0
         : moduleData?.base_value || 0;
-      
+
       currentMonthSessions += count;
       currentMonthAmount += count * rate;
     }
@@ -336,7 +336,7 @@ export async function getDashboardStats(): Promise<{ success: boolean; data?: Da
  * Get value types distribution
  * @returns Distribution of values by type
  */
-export async function getValueTypesDistribution(): Promise<{ success: boolean; data?: Array<{name: string; value: number; color: string}>; error?: string }> {
+export async function getValueTypesDistribution(): Promise<{ success: boolean; data?: Array<{ name: string; value: number; color: string }>; error?: string }> {
   try {
     const supabase = await createClient();
 
@@ -355,9 +355,9 @@ export async function getValueTypesDistribution(): Promise<{ success: boolean; d
 
     for (const item of data || []) {
       const existing = latestValues.get(item.value_type);
-      if (!existing || 
-          item.year > existing.year || 
-          (item.year === existing.year && item.month > existing.month)) {
+      if (!existing ||
+        item.year > existing.year ||
+        (item.year === existing.year && item.month > existing.month)) {
         latestValues.set(item.value_type, {
           value: item.value,
           year: item.year,
@@ -374,7 +374,7 @@ export async function getValueTypesDistribution(): Promise<{ success: boolean; d
     };
 
     const labels: Record<string, string> = {
-      'nomenclatura': 'Nomenclatura',
+      'nomenclatura': 'Nomenclador',
       'modulos': 'Módulos',
       'osde': 'OSDE',
       'sesion': 'Sesión Individual'

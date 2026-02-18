@@ -115,13 +115,15 @@ export async function calculateLiquidation(
       .from('monthly_sessions')
       .select(`
         module_name,
-        session_count,
-        module:module_values(base_value)
+        session_count
       `)
       .eq('professional_id', professionalId)
       .eq('year', year)
-      .eq('month', month)
-      .eq('is_confirmed', true);
+    .eq('month', month)
+    .gt('session_count', 0);
+    // We removed is_confirmed=true to allow professionals to see their estimated earnings
+    // before admin confirms them, if the system is designed to show "draft" liquidations.
+    // If we want ONLY confirmed, we keep it, but the user wants "impact".
 
     if (sessionsError) {
       throw new Error(`Error fetching sessions: ${sessionsError.message}`);
@@ -144,18 +146,27 @@ export async function calculateLiquidation(
       };
     }
 
+    // Fetch value rates for this month/year for all types
+    const { data: valueRates, error: ratesError } = await supabase
+      .from('value_history')
+      .select('value_type, value')
+      .eq('year', year)
+      .eq('month', month);
+
+    if (ratesError) {
+      throw new Error(`Error fetching rates: ${ratesError.message}`);
+    }
+
+    const ratesMap = new Map<string, number>();
+    (valueRates || []).forEach(v => ratesMap.set(v.value_type, parseFloat(v.value.toString())));
+
     // Calculate totals by module
     const moduleMap = new Map<string, { count: number; rate: number }>();
 
     for (const session of sessions) {
       const moduleName = session.module_name;
       const count = session.session_count || 0;
-      // Handle module as array or object depending on Supabase response
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const moduleData = session.module as any;
-      const rate = Array.isArray(moduleData) 
-        ? moduleData[0]?.base_value || 0 
-        : moduleData?.base_value || 0;
+      const rate = ratesMap.get(moduleName) || 0;
 
       if (moduleMap.has(moduleName)) {
         const existing = moduleMap.get(moduleName)!;
@@ -188,15 +199,25 @@ export async function calculateLiquidation(
     // Sort by module name
     moduleBreakdown.sort((a, b) => a.moduleName.localeCompare(b.moduleName));
 
-    // Get professional commission percentage (default to 'modulos' type)
-    const commissionResult = await getProfessionalCommissionInternal(professionalId, 'modulos');
-    const professionalPercentage = commissionResult.success && commissionResult.percentage 
-      ? commissionResult.percentage 
-      : 25;
+    // Get professional commission percentages
+    const { data: profModules } = await supabase
+      .from('professional_modules')
+      .select('value_type, commission_percentage')
+      .eq('professional_id', professionalId)
+      .eq('is_active', true);
 
-    // Calculate amounts based on custom percentage
-    const professionalAmount = totalAmount * (professionalPercentage / 100);
-    const clinicAmount = totalAmount - professionalAmount;
+    const profCommMap = new Map<string, number>();
+    profModules?.forEach(pm => profCommMap.set(pm.value_type, pm.commission_percentage));
+
+    // For historical compatibility/main percentage, get 'modulos' or first available
+    const mainPercentage = profCommMap.get('modulos') || profCommMap.values().next().value || 25;
+
+    // Calculate professional amount by applying individual module commissions
+    let totalProfessionalAmount = 0;
+    moduleBreakdown.forEach(mb => {
+      const comm = profCommMap.get(mb.moduleName) || 25;
+      totalProfessionalAmount += mb.amount * (comm / 100);
+    });
 
     return {
       success: true,
@@ -206,9 +227,9 @@ export async function calculateLiquidation(
         month,
         totalSessions,
         totalAmount,
-        professionalPercentage,
-        professionalAmount,
-        clinicAmount,
+        professionalPercentage: mainPercentage,
+        professionalAmount: totalProfessionalAmount,
+        clinicAmount: totalAmount - totalProfessionalAmount,
         moduleBreakdown
       }
     };
@@ -291,7 +312,7 @@ export async function createOrUpdateLiquidation(
   try {
     // First calculate the liquidation
     const calculation = await calculateLiquidation(professionalId, year, month);
-    
+
     if (!calculation.success || !calculation.data) {
       throw new Error(calculation.error || 'Error al calcular la liquidación');
     }
@@ -348,7 +369,7 @@ export async function markLiquidationAsPaid(
 
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       throw new Error('Usuario no autenticado');
     }
@@ -394,7 +415,7 @@ export async function approveLiquidation(
 
     // Get current user
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       throw new Error('Usuario no autenticado');
     }

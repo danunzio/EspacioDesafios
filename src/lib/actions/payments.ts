@@ -13,6 +13,9 @@ export interface PaymentToClinic {
   amount: number;
   notes?: string;
   created_at: string;
+  verification_status?: 'pending' | 'approved' | 'rejected';
+  verified_by?: string | null;
+  verified_at?: string | null;
 }
 
 export interface Notification {
@@ -53,6 +56,7 @@ export async function createPaymentToClinic(
         payment_type: paymentData.payment_type,
         amount: paymentData.amount,
         notes: paymentData.notes || null,
+        verification_status: 'pending'
       });
 
     if (paymentError) {
@@ -149,6 +153,125 @@ export async function getPaymentsToClinic(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Error al obtener los pagos',
+    };
+  }
+}
+
+/**
+ * Get all payments to clinic for admin review
+ * @param year - Optional year filter
+ * @param month - Optional month filter
+ * @returns List of payments (all professionals)
+ */
+export async function getAllPaymentsToClinic(
+  year?: number,
+  month?: number
+): Promise<{ success: boolean; data?: PaymentToClinic[]; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    let query = supabase
+      .from('payments_to_clinic')
+      .select(`
+        *,
+        professional:profiles(full_name, email)
+      `)
+      .order('payment_date', { ascending: false });
+
+    if (year !== undefined) {
+      query = query.eq('year', year);
+    }
+
+    if (month !== undefined) {
+      query = query.eq('month', month);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new Error(`Error fetching payments: ${error.message}`);
+    }
+
+    return {
+      success: true,
+      data: data || [],
+    };
+  } catch (error) {
+    console.error('Error fetching all payments to clinic:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al obtener los pagos',
+    };
+  }
+}
+
+/**
+ * Review a payment to clinic: approve or reject
+ * Notifies the professional with the result.
+ */
+export async function reviewPaymentToClinic(
+  paymentId: string,
+  status: 'approved' | 'rejected'
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    const { data: payment, error: fetchError } = await supabase
+      .from('payments_to_clinic')
+      .select('*')
+      .eq('id', paymentId)
+      .single();
+
+    if (fetchError || !payment) {
+      throw new Error(fetchError?.message || 'Pago no encontrado');
+    }
+
+    const { error: updateError } = await supabase
+      .from('payments_to_clinic')
+      .update({
+        verification_status: status,
+        verified_by: user.id,
+        verified_at: new Date().toISOString(),
+      })
+      .eq('id', paymentId);
+
+    if (updateError) {
+      throw new Error(`Error updating payment: ${updateError.message}`);
+    }
+
+    const { data: professional } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .eq('id', payment.professional_id)
+      .single();
+
+    if (professional?.id) {
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: professional.id,
+          title: status === 'approved' ? 'Pago verificado' : 'Pago rechazado',
+          message:
+            status === 'approved'
+              ? `Tu pago de ${payment.amount.toLocaleString('es-CL')} ha sido verificado por administración.`
+              : `Tu pago de ${payment.amount.toLocaleString('es-CL')} ha sido rechazado por administración.`,
+          type: status === 'approved' ? 'success' : 'error',
+        });
+    }
+
+    revalidatePath('/admin/pagos');
+    revalidatePath('/profesional/facturacion');
+    return { success: true };
+  } catch (error) {
+    console.error('Error reviewing payment to clinic:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Error al revisar el pago',
     };
   }
 }

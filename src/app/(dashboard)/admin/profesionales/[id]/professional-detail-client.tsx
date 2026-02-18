@@ -25,20 +25,24 @@ import {
   Clock,
   FileText,
   Heart,
-  Calendar
+  Calendar,
+  Eye,
+  EyeOff,
+  Lock
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/calculations';
 import { MONTH_NAMES } from '@/types';
 import {
   createOrUpdateProfessionalModule,
   deleteProfessionalModule,
-  toggleProfessionalModule
+  toggleProfessionalModule,
+  getProfessionalModules
 } from '@/lib/actions/values';
 import { createClient } from '@/lib/supabase/client';
 
 // Define locally since it cannot be imported from 'use server' files
 const VALUE_TYPES = [
-  { value: 'nomenclatura', label: 'Nomenclatura' },
+  { value: 'nomenclatura', label: 'Nomenclador' },
   { value: 'modulos', label: 'Módulos' },
   { value: 'osde', label: 'OSDE' },
   { value: 'sesion', label: 'Sesión Individual' }
@@ -53,6 +57,7 @@ interface Professional {
   is_active: boolean;
   specialization: string | null;
   license_number: string | null;
+  password?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -110,7 +115,7 @@ const valueTypeColors: Record<string, string> = {
 };
 
 const valueTypeLabels: Record<string, string> = {
-  nomenclatura: 'Nomenclatura',
+  nomenclatura: 'Nomenclador',
   modulos: 'Módulos',
   osde: 'OSDE',
   sesion: 'Sesión Individual'
@@ -134,6 +139,7 @@ export function ProfessionalDetailClient({
   const [success, setSuccess] = useState<string | null>(null);
   const [editingChildModules, setEditingChildModules] = useState<string | null>(null);
   const [childModules, setChildModules] = useState<Record<string, string[]>>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   const activeChildren = children.filter(c => c.is_active);
   const inactiveChildren = children.filter(c => !c.is_active);
@@ -153,10 +159,9 @@ export function ProfessionalDetailClient({
 
     if (result.success) {
       // Refresh modules
-      const response = await fetch(`/api/professional-modules?professionalId=${professional.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setModules(data);
+      const modulesResult = await getProfessionalModules(professional.id);
+      if (modulesResult.success && modulesResult.data) {
+        setModules(modulesResult.data);
       }
       setIsAddingModule(false);
       setSelectedType('');
@@ -186,8 +191,8 @@ export function ProfessionalDetailClient({
     );
 
     if (result.success) {
-      setModules(modules.map(m => 
-        m.id === moduleId 
+      setModules(modules.map(m =>
+        m.id === moduleId
           ? { ...m, commission_percentage: parseFloat(commissionPercentage) }
           : m
       ));
@@ -221,8 +226,8 @@ export function ProfessionalDetailClient({
     const result = await toggleProfessionalModule(moduleId, !currentStatus);
 
     if (result.success) {
-      setModules(modules.map(m => 
-        m.id === moduleId 
+      setModules(modules.map(m =>
+        m.id === moduleId
           ? { ...m, is_active: !currentStatus }
           : m
       ));
@@ -266,7 +271,7 @@ export function ProfessionalDetailClient({
             {professional.specialization || 'Sin especialidad'}
           </p>
         </div>
-        <Badge 
+        <Badge
           variant={professional.is_active ? 'success' : 'default'}
           className="ml-auto"
         >
@@ -323,6 +328,27 @@ export function ProfessionalDetailClient({
               </p>
             </div>
           </div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#A38EC3]/10 flex items-center justify-center">
+              <Lock className="text-[#A38EC3]" size={18} />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs text-[#6B6570]">Contraseña Asignada</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-[#2D2A32]">
+                  {showPassword ? (professional.password || 'Sin registrar') : '••••••••'}
+                </p>
+                {professional.password && (
+                  <button
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="p-1 hover:bg-gray-100 rounded-lg transition-colors text-[#9A94A0]"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </Card>
 
@@ -334,8 +360,8 @@ export function ProfessionalDetailClient({
             Configuración de Módulos y Comisiones
           </h3>
           {!isAddingModule && availableTypes.length > 0 && (
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               size="sm"
               onClick={() => setIsAddingModule(true)}
             >
@@ -425,11 +451,10 @@ export function ProfessionalDetailClient({
               return (
                 <div
                   key={module.id}
-                  className={`p-4 rounded-xl border-2 transition-all ${
-                    module.is_active 
-                      ? 'border-gray-100 bg-white' 
-                      : 'border-gray-100 bg-gray-50 opacity-60'
-                  }`}
+                  className={`p-4 rounded-xl border-2 transition-all ${module.is_active
+                    ? 'border-gray-100 bg-white'
+                    : 'border-gray-100 bg-gray-50 opacity-60'
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -502,11 +527,10 @@ export function ProfessionalDetailClient({
                           </button>
                           <button
                             onClick={() => handleToggleModule(module.id, module.is_active)}
-                            className={`p-2 rounded-lg transition-colors ${
-                              module.is_active 
-                                ? 'hover:bg-yellow-50 text-yellow-600' 
-                                : 'hover:bg-green-50 text-green-600'
-                            }`}
+                            className={`p-2 rounded-lg transition-colors ${module.is_active
+                              ? 'hover:bg-yellow-50 text-yellow-600'
+                              : 'hover:bg-green-50 text-green-600'
+                              }`}
                             title={module.is_active ? 'Desactivar' : 'Activar'}
                           >
                             {module.is_active ? <X size={16} /> : <CheckCircle size={16} />}
@@ -564,7 +588,7 @@ export function ProfessionalDetailClient({
                       {isEditingModules ? (
                         <div className="flex items-center gap-2">
                           <div className="flex flex-col gap-1">
-                            {VALUE_TYPES.map(type => (
+                            {VALUE_TYPES.filter(vt => modules.some(m => m.value_type === vt.value && m.is_active)).map(type => (
                               <label key={type.value} className="flex items-center gap-2 text-sm">
                                 <input
                                   type="checkbox"
@@ -586,18 +610,18 @@ export function ProfessionalDetailClient({
                               setLoading(true);
                               try {
                                 const currentModules = childModules[child.id] || child.modules || [];
-                                
+
                                 // First delete all existing relations for this child-professional
                                 const { error: deleteError } = await supabase
                                   .from('children_professionals')
                                   .delete()
                                   .eq('child_id', child.id)
                                   .eq('professional_id', professional.id);
-                                
+
                                 if (deleteError) {
                                   throw new Error('Delete error: ' + deleteError.message);
                                 }
-                                
+
                                 // Then insert new ones
                                 if (currentModules.length > 0) {
                                   const inserts = currentModules.map(m => ({

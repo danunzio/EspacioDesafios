@@ -16,7 +16,6 @@ interface Professional {
 interface Child {
   id: string
   full_name: string
-  birth_date: string | null
   guardian_name: string
   guardian_phone: string
   guardian_email: string
@@ -34,7 +33,6 @@ interface EditChildModalProps {
 
 interface FormData {
   full_name: string
-  birth_date: string
   guardian_name: string
   guardian_phone: string
   guardian_email: string
@@ -57,7 +55,6 @@ interface FormErrors {
 export function EditChildModal({ isOpen, onClose, onSuccess, child }: EditChildModalProps) {
   const [formData, setFormData] = useState<FormData>({
     full_name: '',
-    birth_date: '',
     guardian_name: '',
     guardian_phone: '',
     guardian_email: '',
@@ -88,12 +85,11 @@ export function EditChildModal({ isOpen, onClose, onSuccess, child }: EditChildM
     if (child && isOpen) {
       // Check if health_insurance is in the predefined list
       const isCustomInsurance = !healthInsuranceOptions.includes(child.health_insurance) && child.health_insurance
-      
+
       // Fetch assigned professionals
       fetchAssignedProfessionals(child.id).then(assignedIds => {
         setFormData({
           full_name: child.full_name || '',
-          birth_date: child.birth_date || '',
           guardian_name: child.guardian_name || '',
           guardian_phone: child.guardian_phone || '',
           guardian_email: child.guardian_email || '',
@@ -174,22 +170,6 @@ export function EditChildModal({ isOpen, onClose, onSuccess, child }: EditChildM
       newErrors.full_name = 'El nombre del paciente es obligatorio'
     }
 
-    if (!formData.guardian_name.trim()) {
-      newErrors.guardian_name = 'El nombre del apoderado es obligatorio'
-    }
-
-    if (!formData.guardian_phone.trim()) {
-      newErrors.guardian_phone = 'El teléfono es obligatorio'
-    }
-
-    if (!formData.health_insurance) {
-      newErrors.health_insurance = 'Debe seleccionar una obra social'
-    }
-
-    if (formData.health_insurance === 'Otra' && !formData.custom_health_insurance.trim()) {
-      newErrors.custom_health_insurance = 'Debe ingresar el nombre de la obra social'
-    }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -207,13 +187,12 @@ export function EditChildModal({ isOpen, onClose, onSuccess, child }: EditChildM
         .from('children')
         .update({
           full_name: formData.full_name.trim(),
-          birth_date: formData.birth_date || null,
           guardian_name: formData.guardian_name.trim(),
           guardian_phone: formData.guardian_phone.trim(),
           guardian_email: formData.guardian_email.trim() || null,
-          health_insurance: formData.health_insurance === 'Otra' 
-            ? formData.custom_health_insurance.trim() 
-            : formData.health_insurance,
+          health_insurance: formData.health_insurance === 'Otra'
+            ? formData.custom_health_insurance.trim()
+            : formData.health_insurance || null,
           assigned_professional_id: formData.assigned_professional_ids[0] || null,
           is_active: formData.is_active,
         })
@@ -263,7 +242,7 @@ export function EditChildModal({ isOpen, onClose, onSuccess, child }: EditChildM
 
   const handleDelete = async () => {
     if (!child) return
-    
+
     const confirmed = confirm(`¿Estás seguro de eliminar a ${child.full_name}? Esta acción no se puede deshacer.`)
     if (!confirmed) return
 
@@ -302,11 +281,11 @@ export function EditChildModal({ isOpen, onClose, onSuccess, child }: EditChildM
     const newIds = currentIds.includes(professionalId)
       ? currentIds.filter(id => id !== professionalId)
       : [...currentIds, professionalId]
-    
+
     handleChange('assigned_professional_ids', newIds)
   }
 
-  const selectedProfessionals = professionals.filter(p => 
+  const selectedProfessionals = professionals.filter(p =>
     formData.assigned_professional_ids.includes(p.id)
   )
 
@@ -351,22 +330,17 @@ export function EditChildModal({ isOpen, onClose, onSuccess, child }: EditChildM
                 error={errors.full_name}
               />
 
-              <Input
-                label="Fecha de nacimiento"
-                type="date"
-                value={formData.birth_date}
-                onChange={(e) => handleChange('birth_date', e.target.value)}
-              />
+
 
               <div className="w-full">
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Obra Social *
+                  Obra Social
                 </label>
                 <select
                   value={formData.health_insurance}
                   onChange={(e) => handleChange('health_insurance', e.target.value)}
                   className={`w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-300 focus:border-[#A38EC3] focus:ring-0 focus:outline-none ${errors.health_insurance ? 'border-red-500' : ''}`}
-                  required
+                  required={false}
                 >
                   <option value="">Seleccionar...</option>
                   {healthInsuranceOptions.map((option) => (
@@ -384,7 +358,7 @@ export function EditChildModal({ isOpen, onClose, onSuccess, child }: EditChildM
                   value={formData.custom_health_insurance}
                   onChange={(e) => handleChange('custom_health_insurance', e.target.value)}
                   placeholder="Ingrese el nombre de la obra social"
-                  required
+                  required={false}
                   error={errors.custom_health_insurance}
                 />
               )}
@@ -392,15 +366,15 @@ export function EditChildModal({ isOpen, onClose, onSuccess, child }: EditChildM
 
             <div className="space-y-2 pt-2 border-t border-gray-100">
               <h3 className="text-xs font-semibold text-[#A38EC3] uppercase tracking-wide">
-                Apoderado
+                Responsable
               </h3>
 
               <Input
                 label="Nombre"
                 value={formData.guardian_name}
                 onChange={(e) => handleChange('guardian_name', e.target.value)}
-                placeholder="Nombre del apoderado"
-                required
+                placeholder="Nombre del responsable"
+                required={false}
                 error={errors.guardian_name}
               />
 
@@ -410,7 +384,7 @@ export function EditChildModal({ isOpen, onClose, onSuccess, child }: EditChildM
                 value={formData.guardian_phone}
                 onChange={(e) => handleChange('guardian_phone', e.target.value)}
                 placeholder="+56 9 1234 5678"
-                required
+                required={false}
                 error={errors.guardian_phone}
               />
 
@@ -427,11 +401,11 @@ export function EditChildModal({ isOpen, onClose, onSuccess, child }: EditChildM
               <h3 className="text-xs font-semibold text-[#A38EC3] uppercase tracking-wide">
                 Asignación de Profesionales
               </h3>
-              
+
               {selectedProfessionals.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-2">
                   {selectedProfessionals.map(prof => (
-                    <span 
+                    <span
                       key={prof.id}
                       className="inline-flex items-center gap-1 px-2 py-1 bg-[#A38EC3]/10 text-[#A38EC3] rounded-full text-xs"
                     >

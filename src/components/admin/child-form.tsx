@@ -13,7 +13,6 @@ interface Professional {
 
 interface ChildFormData {
   full_name: string;
-  birth_date: string;
   parent_name: string;
   parent_phone: string;
   assigned_professional_id: string;
@@ -29,7 +28,6 @@ interface ChildFormProps {
 
 const initialFormData: ChildFormData = {
   full_name: '',
-  birth_date: '',
   parent_name: '',
   parent_phone: '',
   assigned_professional_id: '',
@@ -54,26 +52,6 @@ export function ChildForm({
 
     if (!formData.full_name.trim()) {
       newErrors.full_name = 'El nombre es requerido';
-    }
-
-    if (!formData.birth_date) {
-      newErrors.birth_date = 'La fecha de nacimiento es requerida';
-    } else {
-      const birthDate = new Date(formData.birth_date);
-      const today = new Date();
-      if (birthDate > today) {
-        newErrors.birth_date = 'La fecha no puede ser futura';
-      }
-    }
-
-    if (!formData.parent_name.trim()) {
-      newErrors.parent_name = 'El nombre del apoderado es requerido';
-    }
-
-    if (!formData.parent_phone.trim()) {
-      newErrors.parent_phone = 'El teléfono es requerido';
-    } else if (!/^\+?[\d\s-]{8,}$/.test(formData.parent_phone)) {
-      newErrors.parent_phone = 'Ingresa un teléfono válido';
     }
 
     setErrors(newErrors);
@@ -141,32 +119,21 @@ export function ChildForm({
             value={formData.full_name}
             onChange={(e) => handleChange('full_name', e.target.value)}
             error={errors.full_name}
-            required
-          />
-
-          <Input
-            label="Fecha de Nacimiento"
-            type="date"
-            value={formData.birth_date}
-            onChange={(e) => handleChange('birth_date', e.target.value)}
-            error={errors.birth_date}
-            required
           />
         </div>
 
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-[#6B6570] uppercase tracking-wide flex items-center gap-2">
             <Users size={16} />
-            Datos del Apoderado
+            Datos del Responsable
           </h3>
 
           <Input
-            label="Nombre del Apoderado"
+            label="Nombre del Responsable"
             placeholder="Ej: María García"
             value={formData.parent_name}
             onChange={(e) => handleChange('parent_name', e.target.value)}
             error={errors.parent_name}
-            required
           />
 
           <Input
@@ -175,7 +142,6 @@ export function ChildForm({
             value={formData.parent_phone}
             onChange={(e) => handleChange('parent_phone', e.target.value)}
             error={errors.parent_phone}
-            required
           />
         </div>
 

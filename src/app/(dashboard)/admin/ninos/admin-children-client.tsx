@@ -109,7 +109,7 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
         if (child.assigned_professional_id && !profIds.includes(child.assigned_professional_id)) {
           profIds.push(child.assigned_professional_id);
         }
-        
+
         return {
           ...child,
           assigned_professional_ids: profIds,
@@ -166,8 +166,8 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
       </div>
 
       {/* Botón Nuevo Paciente */}
-      <Button 
-        variant="primary" 
+      <Button
+        variant="primary"
         onClick={() => setIsAddModalOpen(true)}
         className="w-full"
       >
@@ -185,7 +185,7 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
             />
             <input
               type="text"
-              placeholder="Buscar por nombre o apoderado..."
+              placeholder="Buscar por nombre o responsable..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none"
@@ -233,8 +233,8 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
                           {child.is_active ? 'Activo' : 'Inactivo'}
                         </Badge>
                       </div>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation()
@@ -270,7 +270,7 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
                     </div>
                     <div className="flex flex-wrap gap-1 mt-2">
                       {(child.professional_names ?? []).map((name, index) => (
-                        <span 
+                        <span
                           key={index}
                           className="text-xs px-2 py-1 bg-[#A38EC3]/10 text-[#A38EC3] rounded-full"
                         >

@@ -6,11 +6,11 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { createClient } from '@/lib/supabase/client';
-import { 
-  Settings, 
-  DollarSign, 
-  TrendingDown, 
-  BarChart3, 
+import {
+  Settings,
+  DollarSign,
+  TrendingDown,
+  BarChart3,
   ChevronRight,
   FileText,
   Briefcase,
@@ -18,20 +18,26 @@ import {
   Clock,
   Zap,
   Flame,
-  Droplets
+  Droplets,
+  MoreVertical,
+  Edit,
+  Trash,
+  Power,
+  X
 } from 'lucide-react';
+import { Modal } from '@/components/ui/modal';
 
 const menuItems = [
   {
     title: 'Configuración de Valores',
-    description: 'Administra valores de nomenclatura, módulos, OSDE y sesiones',
+    description: 'Administra valores de nomenclador, módulos, OSDE y sesiones',
     href: '/admin/valores',
     icon: Settings,
     color: '#A38EC3',
     subIcons: [FileText, Briefcase, Heart, Clock]
   },
   {
-    title: 'Panel de Consumos',
+    title: 'Panel de Gastos',
     description: 'Registro de gastos operativos (luz, gas, fotocopias, etc.)',
     href: '/admin/consumos',
     icon: TrendingDown,
@@ -63,6 +69,8 @@ export default function AdminMorePage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [selectedInsurance, setSelectedInsurance] = useState<HealthInsurance | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const supabase = createClient();
 
@@ -286,19 +294,19 @@ export default function AdminMorePage() {
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (
-            <Card 
+            <Card
               key={item.href}
               className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
               onClick={() => router.push(item.href)}
             >
               <div className="p-4 flex items-center gap-4">
-                <div 
+                <div
                   className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: `${item.color}20` }}
                 >
                   <Icon size={28} style={{ color: item.color }} />
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-[#2D2A32] text-lg">
                     {item.title}
@@ -306,11 +314,11 @@ export default function AdminMorePage() {
                   <p className="text-sm text-[#6B6570] mt-1">
                     {item.description}
                   </p>
-                  
+
                   {item.subIcons.length > 0 && (
                     <div className="flex items-center gap-2 mt-3">
                       {item.subIcons.map((SubIcon, idx) => (
-                        <div 
+                        <div
                           key={idx}
                           className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
                         >
@@ -320,7 +328,7 @@ export default function AdminMorePage() {
                     </div>
                   )}
                 </div>
-                
+
                 <ChevronRight className="text-[#9A94A0] flex-shrink-0" size={24} />
               </div>
             </Card>
@@ -395,53 +403,18 @@ export default function AdminMorePage() {
                     )}
                   </div>
                   <div className="flex items-center gap-1">
-                    {editingId === insurance.id ? (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="primary"
-                          disabled={loading}
-                          onClick={() => handleSaveEdit(insurance.id)}
-                        >
-                          Guardar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={loading}
-                          onClick={handleCancelEdit}
-                        >
-                          Cancelar
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={loading}
-                          onClick={() => handleStartEdit(insurance)}
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={insurance.is_active ? 'outline' : 'primary'}
-                          disabled={loading}
-                          onClick={() => handleToggleActive(insurance)}
-                        >
-                          {insurance.is_active ? 'Desactivar' : 'Activar'}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={loading}
-                          onClick={() => handleDeleteInsurance(insurance.id)}
-                        >
-                          Eliminar
-                        </Button>
-                      </>
-                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="p-2 h-auto rounded-full"
+                      onClick={() => {
+                        setSelectedInsurance(insurance);
+                        setIsModalOpen(true);
+                        setEditingId(null);
+                      }}
+                    >
+                      <MoreVertical size={16} />
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -450,13 +423,108 @@ export default function AdminMorePage() {
         </div>
       </Card>
 
+      {/* Modal de Acciones para Obra Social */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedInsurance(null);
+          setEditingId(null);
+        }}
+        title={editingId ? 'Editar Obra Social' : 'Gestionar Obra Social'}
+        maxWidth="sm"
+      >
+        {selectedInsurance && (
+          <div className="space-y-6">
+            {!editingId ? (
+              <>
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-sm text-[#6B6570]">Nombre</p>
+                  <p className="text-lg font-bold text-[#2D2A32]">{selectedInsurance.name}</p>
+                  <p className="text-xs mt-1">
+                    Estado: <span className={selectedInsurance.is_active ? 'text-green-600 font-medium' : 'text-red-500 font-medium'}>
+                      {selectedInsurance.is_active ? 'Activa' : 'Inactiva'}
+                    </span>
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2">
+                  <Button
+                    variant="outline"
+                    className="justify-start gap-3 h-12 rounded-xl text-blue-600 border-blue-100 hover:bg-blue-50"
+                    onClick={() => handleStartEdit(selectedInsurance)}
+                  >
+                    <Edit size={18} />
+                    Editar Nombre
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className={`justify-start gap-3 h-12 rounded-xl ${selectedInsurance.is_active
+                        ? 'text-amber-600 border-amber-100 hover:bg-amber-50'
+                        : 'text-green-600 border-green-100 hover:bg-green-50'
+                      }`}
+                    onClick={async () => {
+                      await handleToggleActive(selectedInsurance);
+                      setIsModalOpen(false);
+                    }}
+                  >
+                    <Power size={18} />
+                    {selectedInsurance.is_active ? 'Desactivar' : 'Activar'}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="justify-start gap-3 h-12 rounded-xl text-red-600 border-red-100 hover:bg-red-50"
+                    onClick={async () => {
+                      await handleDeleteInsurance(selectedInsurance.id);
+                      setIsModalOpen(false);
+                    }}
+                  >
+                    <Trash size={18} />
+                    Eliminar Permanente
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-4">
+                <Input
+                  label="Nuevo nombre"
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    className="flex-1"
+                    onClick={() => handleSaveEdit(selectedInsurance.id)}
+                    disabled={loading}
+                  >
+                    {loading ? 'Guardando...' : 'Guardar Cambios'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={handleCancelEdit}
+                    disabled={loading}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
       <Card variant="soft" className="bg-gradient-to-r from-[#A38EC3]/5 to-[#F4C2C2]/5">
         <div className="p-4">
           <h4 className="font-semibold text-[#2D2A32] mb-2">
             ¿Necesitas ayuda?
           </h4>
           <p className="text-sm text-[#6B6570]">
-            Si tienes alguna duda sobre cómo usar estas herramientas, 
+            Si tienes alguna duda sobre cómo usar estas herramientas,
             contacta al administrador del sistema.
           </p>
         </div>

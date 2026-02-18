@@ -21,37 +21,37 @@ import {
 } from 'lucide-react';
 import { MONTH_NAMES } from '@/types';
 import { formatCurrency } from '@/lib/utils/calculations';
-import { 
-  getAllValueHistories, 
-  createOrUpdateValue, 
+import {
+  getAllValueHistories,
+  createOrUpdateValue,
   deleteValue,
-  type ValueHistory 
+  type ValueHistory
 } from '@/lib/actions/values';
 
 type ValueType = 'nomenclatura' | 'modulos' | 'osde' | 'sesion';
 
 const valueTypeLabels: Record<ValueType, { label: string; icon: typeof FileText; color: string; description: string }> = {
-  nomenclatura: { 
-    label: 'Nomenclatura', 
-    icon: FileText, 
+  nomenclatura: {
+    label: 'Nomenclador',
+    icon: FileText,
     color: '#A38EC3',
-    description: 'Valor de nomenclatura para facturación'
+    description: 'Valor de nomenclador para facturación'
   },
-  modulos: { 
-    label: 'Módulos', 
-    icon: Briefcase, 
+  modulos: {
+    label: 'Módulos',
+    icon: Briefcase,
     color: '#F4C2C2',
     description: 'Valor base por módulo de trabajo'
   },
-  osde: { 
-    label: 'OSDE', 
-    icon: Heart, 
+  osde: {
+    label: 'OSDE',
+    icon: Heart,
     color: '#A8E6CF',
     description: 'Valor para pacientes con OSDE'
   },
-  sesion: { 
-    label: 'Sesión Individual', 
-    icon: Clock, 
+  sesion: {
+    label: 'Sesión Individual',
+    icon: Clock,
     color: '#F9E79F',
     description: 'Valor por sesión individual'
   },
@@ -101,7 +101,7 @@ export default function AdminValuesPage() {
     }
 
     setLoading(true);
-    
+
     const result = await createOrUpdateValue({
       value_type: selectedType,
       year,
@@ -141,14 +141,14 @@ export default function AdminValuesPage() {
 
     setLoading(true);
     const result = await deleteValue(id);
-    
+
     if (result.success) {
       await loadValues();
       setSuccess('Valor eliminado correctamente');
     } else {
       setError(result.error || 'Error al eliminar el valor');
     }
-    
+
     setLoading(false);
   };
 
@@ -223,14 +223,14 @@ export default function AdminValuesPage() {
                 }}
                 className={`
                   flex items-center gap-2 px-4 py-3 rounded-xl transition-all
-                  ${isActive 
-                    ? 'bg-white shadow-md text-[#2D2A32] font-medium' 
+                  ${isActive
+                    ? 'bg-white shadow-md text-[#2D2A32] font-medium'
                     : 'text-[#6B6570] hover:bg-white/50'
                   }
                 `}
               >
-                <Icon 
-                  size={20} 
+                <Icon
+                  size={20}
                   style={{ color: isActive ? valueTypeLabels[type].color : undefined }}
                 />
                 <span className="hidden sm:inline">{valueTypeLabels[type].label}</span>
@@ -259,7 +259,7 @@ export default function AdminValuesPage() {
                 {editingId ? 'Editar' : 'Configurar'} {valueTypeLabels[selectedType].label}
               </h3>
             </div>
-            <button 
+            <button
               onClick={handleCancel}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
@@ -496,14 +496,14 @@ export default function AdminValuesPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {(Object.keys(valueTypeLabels) as ValueType[]).map((type) => {
             const currentMonthValue = values.find(
-              (v) => v.value_type === type && 
-              v.year === new Date().getFullYear() && 
-              v.month === new Date().getMonth() + 1
+              (v) => v.value_type === type &&
+                v.year === new Date().getFullYear() &&
+                v.month === new Date().getMonth() + 1
             );
             const Icon = valueTypeLabels[type].icon;
             return (
-              <div 
-                key={type} 
+              <div
+                key={type}
                 className="bg-white rounded-2xl p-4 shadow-sm"
               >
                 <div className="flex items-center gap-2 mb-2">

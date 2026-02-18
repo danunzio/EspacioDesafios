@@ -171,6 +171,15 @@ export default function NotificacionesPage() {
                         <Check size={18} />
                       </button>
                     )}
+                    {notification.title === 'Nuevo pago recibido' && (
+                      <a
+                        href="/admin/pagos"
+                        className="ml-2 px-3 py-2 text-sm rounded-full bg-[#A38EC3]/10 text-[#2D2A32] hover:bg-[#A38EC3]/20 transition-colors flex-shrink-0"
+                        title="Revisar pagos"
+                      >
+                        Revisar pagos
+                      </a>
+                    )}
                   </div>
                 </div>
               </div>

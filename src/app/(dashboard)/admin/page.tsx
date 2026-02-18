@@ -64,6 +64,35 @@ export default async function AdminDashboardPage() {
     .order('created_at', { ascending: false })
     .limit(5)
 
+  const { data: recentPayments } = await supabase
+    .from('payments_to_clinic')
+    .select(`
+      *,
+      profiles:professional_id(full_name)
+    `)
+    .order('payment_date', { ascending: false })
+    .limit(5)
+
+  const combinedRecent = [
+    ...(recentActivity || []).map(a => ({
+      id: a.id,
+      kind: 'sesion',
+      children: a.children,
+      profiles: a.profiles,
+      session_count: a.session_count,
+      total_amount: a.total_amount
+    })),
+    ...(recentPayments || []).map(p => ({
+      id: p.id,
+      kind: 'pago',
+      children: null,
+      profiles: p.profiles,
+      session_count: 0,
+      total_amount: p.amount,
+      payment_type: p.payment_type
+    })),
+  ]
+
   const stats = {
     totalProfessionals: totalProfessionals || 0,
     totalActiveChildren: totalActiveChildren || 0,
@@ -75,7 +104,7 @@ export default async function AdminDashboardPage() {
     <AdminDashboardClient
       profile={profile}
       stats={stats}
-      recentActivity={recentActivity}
+      recentActivity={combinedRecent}
     />
   )
 }

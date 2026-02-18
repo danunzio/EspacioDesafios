@@ -21,6 +21,13 @@ import { formatCurrency } from '@/lib/utils/calculations';
 import { SessionRow } from '@/components/professional/session-row';
 import { useAuth } from '@/lib/hooks/use-auth';
 
+const VALUE_TYPE_LABELS: Record<string, string> = {
+  nomenclatura: 'Nomenclador',
+  modulos: 'Módulos',
+  osde: 'OSDE',
+  sesion: 'Sesión Individual'
+};
+
 interface Child {
   id: string;
   full_name: string;
@@ -69,7 +76,7 @@ export default function ProfessionalSessionsPage() {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     async function fetchData() {
       if (authLoading || !user || !profile) {
         return;
@@ -78,45 +85,18 @@ export default function ProfessionalSessionsPage() {
       try {
         setLoading(true);
 
-        // Get children from direct assignment
-        const childrenFromDirectAssignment = await supabase
-          .from('children')
-          .select('id, full_name')
-          .eq('assigned_professional_id', user.id)
-          .eq('is_active', true);
-
-        if (!isMounted) return;
-
-        if (childrenFromDirectAssignment.error) {
-          throw childrenFromDirectAssignment.error;
-        }
-
-        // Get children from relation table
+        // Get children with explicit modular assignments
         const childrenFromRelation = await supabase
           .from('children_professionals')
           .select('child_id, module_name')
           .eq('professional_id', user.id);
 
         if (!isMounted) return;
-
         if (childrenFromRelation.error) {
           throw childrenFromRelation.error;
         }
 
-        // Build child modules map
-        const childModulesMap = new Map<string, string[]>();
-        const allModuleTypes = new Set<string>();
-        
-        for (const item of (childrenFromRelation.data || [])) {
-          if (item.module_name) {
-            const existing = childModulesMap.get(item.child_id) || [];
-            existing.push(item.module_name);
-            childModulesMap.set(item.child_id, existing);
-            allModuleTypes.add(item.module_name);
-          }
-        }
-
-        // Get professional module configurations (commission percentages)
+        // Get professional's active module configurations (commission percentages)
         const professionalModulesResponse = await supabase
           .from('professional_modules')
           .select('value_type, commission_percentage')
@@ -124,126 +104,84 @@ export default function ProfessionalSessionsPage() {
           .eq('is_active', true);
 
         if (!isMounted) return;
+        if (professionalModulesResponse.error) {
+          throw professionalModulesResponse.error;
+        }
 
         const professionalModulesMap = new Map<string, number>();
         for (const mod of (professionalModulesResponse.data || [])) {
           professionalModulesMap.set(mod.value_type, mod.commission_percentage);
         }
 
-        // Default to 25% if not configured
-        const getCommissionPercentage = (moduleType: string) => {
-          return professionalModulesMap.get(moduleType) || 25;
-        };
+        // Build child modules map, filtering by the professional's active types
+        const childModulesMap = new Map<string, string[]>();
+        const assignedChildIdsSet = new Set<string>();
 
-        const relatedChildIds = Array.from(new Set((childrenFromRelation.data || []).map((item: any) => item.child_id)));
-        
-        let relatedChildren: any[] = [];
-        if (relatedChildIds.length > 0) {
-          const childrenResponse = await supabase
-            .from('children')
-            .select('id, full_name')
-            .in('id', relatedChildIds)
-            .eq('is_active', true);
-          
-          if (!isMounted) return;
-          
-          if (!childrenResponse.error) {
-            relatedChildren = childrenResponse.data || [];
+        for (const item of (childrenFromRelation.data || [])) {
+          if (item.module_name && professionalModulesMap.has(item.module_name)) {
+            const existing = childModulesMap.get(item.child_id) || [];
+            existing.push(item.module_name);
+            childModulesMap.set(item.child_id, existing);
+            assignedChildIdsSet.add(item.child_id);
           }
         }
 
-        const allChildren = [...(childrenFromDirectAssignment.data || []), ...relatedChildren];
-        
-        const uniqueChildrenMap = new Map();
-        allChildren.forEach((child: any) => {
-          if (!uniqueChildrenMap.has(child.id)) {
-            const modules = childModulesMap.get(child.id);
-            child.modules = modules ? modules : Array.from(allModuleTypes);
-            uniqueChildrenMap.set(child.id, child);
-          }
-        });
+        const assignedChildIds = Array.from(assignedChildIdsSet);
+        if (assignedChildIds.length === 0) {
+          setChildren([]);
+          setSessions([]);
+          setLoading(false);
+          return;
+        }
 
-        const childrenData = Array.from(uniqueChildrenMap.values());
+        // Fetch details for the assigned children
+        const childrenResponse = await supabase
+          .from('children')
+          .select('id, full_name')
+          .in('id', assignedChildIds)
+          .eq('is_active', true);
 
-        // Get module values from database (for base values)
+        if (!isMounted) return;
+        if (childrenResponse.error) {
+          throw childrenResponse.error;
+        }
+
+        const childrenData = (childrenResponse.data || []).map(child => ({
+          ...child,
+          modules: childModulesMap.get(child.id) || []
+        }));
+
+        setChildren(childrenData);
+
+
         const moduleValuesResponse = await supabase
           .from('module_values')
           .select('module_name, base_value')
           .eq('is_active', true);
 
-        if (moduleValuesResponse.error) {
-          throw moduleValuesResponse.error;
-        }
-
-        const modulesData = moduleValuesResponse.data || [];
-        setModuleValues(modulesData);
+        if (moduleValuesResponse.error) throw moduleValuesResponse.error;
+        setModuleValues(moduleValuesResponse.data || []);
 
         const currentMonth = month;
         const currentYear = year;
         const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
         const previousYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
-        const currentSessionsResponse = await supabase
-          .from('monthly_sessions')
-          .select('child_id, module_name, session_count')
-          .eq('professional_id', user.id)
-          .eq('year', currentYear)
-          .eq('month', currentMonth);
-
-        if (currentSessionsResponse.error) {
-          throw currentSessionsResponse.error;
-        }
-
-        const currentSessionsData = currentSessionsResponse.data || [];
-
-        const previousSessionsResponse = await supabase
-          .from('monthly_sessions')
-          .select('child_id, module_name, session_count')
-          .eq('professional_id', user.id)
-          .eq('year', previousYear)
-          .eq('month', previousMonth);
-
-        if (previousSessionsResponse.error) {
-          throw previousSessionsResponse.error;
-        }
-
-        const previousSessionsData = previousSessionsResponse.data || [];
-
-        const previousSessionsMap: Record<string, number> = {};
-        previousSessionsData.forEach((s) => {
-          const key = `${s.child_id}-${s.module_name}`;
-          previousSessionsMap[key] = s.session_count;
-        });
+        const [currentSessionsRes, previousSessionsRes] = await Promise.all([
+          supabase.from('monthly_sessions').select('child_id, module_name, session_count')
+            .eq('professional_id', user.id).eq('year', currentYear).eq('month', currentMonth),
+          supabase.from('monthly_sessions').select('child_id, module_name, session_count')
+            .eq('professional_id', user.id).eq('year', previousYear).eq('month', previousMonth)
+        ]);
 
         const currentSessionsMap: Record<string, number> = {};
-        currentSessionsData.forEach((s) => {
-          const key = `${s.child_id}-${s.module_name}`;
-          currentSessionsMap[key] = s.session_count;
-        });
+        (currentSessionsRes.data || []).forEach(s => currentSessionsMap[`${s.child_id}-${s.module_name}`] = s.session_count);
 
-        const childrenWithModules: Child[] = childrenData.map((child) => {
-          const childCurrentSessions = currentSessionsData.filter(
-            (s) => s.child_id === child.id
-          );
-
-          let modules: string[];
-          if (childCurrentSessions.length > 0) {
-            modules = childCurrentSessions.map((s) => s.module_name);
-          } else {
-            modules = modulesData.map((m) => m.module_name);
-          }
-
-          return {
-            id: child.id,
-            full_name: child.full_name,
-            modules,
-          };
-        });
-
-        setChildren(childrenWithModules);
+        const previousSessionsMap: Record<string, number> = {};
+        (previousSessionsRes.data || []).forEach(s => previousSessionsMap[`${s.child_id}-${s.module_name}`] = s.session_count);
 
         const sessionsData: SessionData[] = [];
-        childrenWithModules.forEach((child) => {
+        childrenData.forEach((child) => {
           child.modules.forEach((module) => {
             const key = `${child.id}-${module}`;
             sessionsData.push({
@@ -251,7 +189,7 @@ export default function ProfessionalSessionsPage() {
               module_type: module,
               session_count: currentSessionsMap[key] || 0,
               previous_month_count: previousSessionsMap[key] || 0,
-              commission_percentage: getCommissionPercentage(module),
+              commission_percentage: professionalModulesMap.get(module) || 25,
             });
           });
         });
@@ -259,17 +197,17 @@ export default function ProfessionalSessionsPage() {
         setSessions(sessionsData);
       } catch (error) {
         if (!isMounted) return;
-        
+
         const errorMessage = error instanceof Error ? error.message : String(error);
-        const isAbortError = 
+        const isAbortError =
           (error instanceof Error && error.name === 'AbortError') ||
           errorMessage.includes('aborted') ||
           errorMessage.includes('abort');
-        
+
         if (isAbortError) {
           return;
         }
-        
+
         console.error('Error fetching data:', error);
       } finally {
         if (isMounted) {
@@ -303,33 +241,38 @@ export default function ProfessionalSessionsPage() {
     setSaveSuccess(false);
 
     try {
-      const sessionsToUpsert = sessions
-        .filter((s) => s.session_count > 0)
-        .map((s) => ({
-          professional_id: user.id,
-          year,
-          month,
-          child_id: s.child_id,
-          module_name: s.module_type,
-          session_count: s.session_count,
-          individual_sessions: s.session_count,
-          group_sessions: 0,
-          is_confirmed: false,
-        }));
+      const sessionsToUpsert = sessions.map((s) => ({
+        professional_id: user.id,
+        year,
+        month,
+        child_id: s.child_id,
+        module_name: s.module_type,
+        session_count: s.session_count,
+        individual_sessions: s.session_count,
+        group_sessions: 0,
+        is_confirmed: false,
+      }));
 
       if (sessionsToUpsert.length === 0) {
-        throw new Error('No hay sesiones para guardar');
+        return;
       }
 
-      const { error: upsertError } = await supabase
+      const { error: upsertError, status, statusText } = await supabase
         .from('monthly_sessions')
         .upsert(sessionsToUpsert, {
-          onConflict: 'professional_id,child_id,year,month,module_name',
-          ignoreDuplicates: false,
+          onConflict: 'professional_id,child_id,year,month,module_name'
         });
 
       if (upsertError) {
-        throw upsertError;
+        console.error('Supabase Upsert Error:', {
+          message: upsertError.message,
+          details: upsertError.details,
+          hint: upsertError.hint,
+          code: upsertError.code,
+          status,
+          statusText
+        });
+        throw new Error(upsertError.message);
       }
 
       setSaveSuccess(true);
@@ -447,7 +390,7 @@ export default function ProfessionalSessionsPage() {
               <SessionRow
                 key={`${session.child_id}-${session.module_type}`}
                 childName={getChildName(session.child_id)}
-                moduleType={session.module_type}
+                moduleType={VALUE_TYPE_LABELS[session.module_type] || session.module_type}
                 commissionPercentage={session.commission_percentage}
                 sessionCount={session.session_count}
                 previousMonthCount={session.previous_month_count}

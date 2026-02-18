@@ -27,8 +27,10 @@ interface ModuleValue {
 
 interface RecentActivity {
   id: string
-  session_count: number
-  total_amount: number
+  kind?: 'sesion' | 'pago'
+  session_count?: number
+  total_amount?: number
+  payment_type?: 'efectivo' | 'transferencia'
   children?: { full_name: string } | null
   profiles?: { full_name: string } | null
 }
@@ -137,12 +139,25 @@ export function AdminDashboardClient({
                 className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-[#E8E5F0] last:border-0 gap-2"
               >
                 <div className="flex-1">
-                  <p className="font-medium text-[#2D2A32]">
-                    {activity.children?.full_name || 'Paciente'}
-                  </p>
-                  <p className="text-sm text-[#6B6570]">
-                    {activity.profiles?.full_name || 'Profesional'} • {activity.session_count} sesiones
-                  </p>
+                  {activity.kind === 'pago' ? (
+                    <>
+                      <p className="font-medium text-[#2D2A32]">
+                        {activity.profiles?.full_name || 'Profesional'}
+                      </p>
+                      <p className="text-sm text-[#6B6570]">
+                        Registró un pago • {activity.payment_type === 'efectivo' ? 'Efectivo' : 'Transferencia'}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium text-[#2D2A32]">
+                        {activity.children?.full_name || 'Paciente'}
+                      </p>
+                      <p className="text-sm text-[#6B6570]">
+                        {activity.profiles?.full_name || 'Profesional'} • {activity.session_count} sesiones
+                      </p>
+                    </>
+                  )}
                 </div>
                 <span className="text-sm font-medium text-[#A38EC3] text-right">
                   ${activity.total_amount?.toLocaleString('es-CL')}

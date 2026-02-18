@@ -38,7 +38,7 @@ El sistema nace de la necesidad de digitalizar y optimizar la gestión administr
 2. **Profesional accede desde su celular** y carga las sesiones realizadas durante el mes
 3. **Sistema calcula automáticamente** la facturación y comisión del profesional
 4. **Administrador genera liquidaciones** mensuales con filtros avanzados
-5. **Profesional registra pagos** a Espacio Desafíos y el administrador recibe notificación
+5. **Profesional registra pagos** a Espacio Desafíos, el administrador recibe notificación y verifica el pago
 
 ### 🏥 Contexto de Uso
 
@@ -92,8 +92,12 @@ Ideal para:
 2. Ir a "Liquidaciones"
 3. Seleccionar año, mes y profesionales a liquidar
 4. Calcular liquidaciones (automático basado en % configurado)
-5. Aprobar liquidaciones pendientes
-6. Marcar como pagadas una vez realizada la transferencia
+5. Revisar en "Pagos" los pagos reportados por profesionales y aprobar/rechazar
+6. Ver en "Liquidaciones" el resumen por profesional:
+   - Comisión total a abonar a Espacio Desafíos
+   - Pagos verificados imputados por profesional
+   - Saldo pendiente por profesional
+7. Marcar liquidaciones como pagadas una vez conciliado el período
 ```
 
 ---

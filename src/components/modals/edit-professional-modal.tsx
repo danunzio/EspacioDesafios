@@ -52,7 +52,7 @@ export function EditProfessionalModal({ isOpen, onClose, onSuccess, professional
   const [deleting, setDeleting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [success, setSuccess] = useState(false);
-  const [showPassword, setShowPassword] = useState(true); // Por defecto visible
+  const [showPassword] = useState(true); // Por defecto visible
   const [sendEmailNotification, setSendEmailNotification] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -76,7 +76,6 @@ export function EditProfessionalModal({ isOpen, onClose, onSuccess, professional
       setErrors({});
       setSuccess(false);
       setToast(null);
-      setShowPassword(true);
       setSendEmailNotification(false);
     }
   }, [isOpen]);
@@ -151,11 +150,11 @@ export function EditProfessionalModal({ isOpen, onClose, onSuccess, professional
       }
 
       setSuccess(true);
-      setToast({ 
-        message: sendEmailNotification 
-          ? 'Profesional actualizado y notificación enviada' 
-          : 'Profesional actualizado exitosamente', 
-        type: 'success' 
+      setToast({
+        message: sendEmailNotification
+          ? 'Profesional actualizado y notificación enviada'
+          : 'Profesional actualizado exitosamente',
+        type: 'success'
       });
 
       setTimeout(() => {
@@ -204,7 +203,7 @@ export function EditProfessionalModal({ isOpen, onClose, onSuccess, professional
 
       const directChildren = directResult.data || [];
       const relationChildIds = relationResult.data?.map(r => r.child_id) || [];
-      
+
       let relationChildren: any[] = [];
       if (relationChildIds.length > 0) {
         const relationResult2 = await supabase
@@ -321,25 +320,14 @@ export function EditProfessionalModal({ isOpen, onClose, onSuccess, professional
             />
 
             {/* Campo de contraseña visible por defecto */}
-            <div className="relative">
-              <Input
-                label="Contraseña (dejar vacío para mantener la actual)"
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={(e) => handleChange('password', e.target.value)}
-                placeholder="Nueva contraseña (mínimo 6 caracteres)"
-                error={errors.password}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-[31px] p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                tabIndex={-1}
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
+            <Input
+              label="Contraseña"
+              type="text"
+              value={formData.password}
+              onChange={(e) => handleChange('password', e.target.value)}
+              placeholder="Contraseña Registrada"
+              error={errors.password}
+            />
 
             {/* Checkbox para notificación por email */}
             <label className="flex items-center gap-2 p-3 bg-[#A38EC3]/5 rounded-xl cursor-pointer hover:bg-[#A38EC3]/10 transition-colors">

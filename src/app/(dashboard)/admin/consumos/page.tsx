@@ -8,10 +8,7 @@ import {
   Zap,
   Droplets,
   Flame,
-  FileText,
-  Package,
   Sparkles,
-  Wrench,
   MoreHorizontal,
   Plus,
   Pencil,
@@ -22,50 +19,52 @@ import {
   CheckCircle,
   TrendingDown,
   DollarSign,
-  Calendar
+  Calendar,
+  Home,
+  Building2
 } from 'lucide-react';
 import { MONTH_NAMES } from '@/types';
 import { formatCurrency } from '@/lib/utils/calculations';
-import { 
-  getExpenses, 
-  createExpense, 
+import {
+  getExpenses,
+  createExpense,
   updateExpense,
   deleteExpense,
   type Expense
 } from '@/lib/actions/values';
 
 const EXPENSE_CATEGORIES = [
+  'Alquiler',
   'Luz',
   'Gas',
+  'Aysa',
   'Agua',
-  'Fotocopias',
-  'Materiales',
   'Limpieza',
-  'Mantenimiento',
+  'Imp Municipal',
   'Otros'
 ] as const;
 
 type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
 
 const categoryIcons: Record<string, typeof Zap> = {
+  'Alquiler': Home,
   'Luz': Zap,
   'Gas': Flame,
+  'Aysa': Droplets,
   'Agua': Droplets,
-  'Fotocopias': FileText,
-  'Materiales': Package,
   'Limpieza': Sparkles,
-  'Mantenimiento': Wrench,
+  'Imp Municipal': Building2,
   'Otros': MoreHorizontal,
 };
 
 const categoryColors: Record<string, string> = {
+  'Alquiler': '#A38EC3',
   'Luz': '#F9E79F',
   'Gas': '#F4C2C2',
-  'Agua': '#A8E6CF',
-  'Fotocopias': '#A38EC3',
-  'Materiales': '#D4B850',
+  'Aysa': '#A8E6CF',
+  'Agua': '#AED6F1',
   'Limpieza': '#8ED9B8',
-  'Mantenimiento': '#E8A5A5',
+  'Imp Municipal': '#D4B850',
   'Otros': '#9A94A0',
 };
 
@@ -85,6 +84,7 @@ export default function AdminConsumosPage() {
   const [formCategory, setFormCategory] = useState<ExpenseCategory>(EXPENSE_CATEGORIES[0]);
   const [formDescription, setFormDescription] = useState('');
   const [formAmount, setFormAmount] = useState('');
+  const [formRegisteredBy, setFormRegisteredBy] = useState('Cintia');
 
   // Load expenses
   const loadExpenses = useCallback(async () => {
@@ -146,7 +146,8 @@ export default function AdminConsumosPage() {
       month: formMonth,
       category: formCategory,
       description: formDescription.trim() || '',
-      amount: numericAmount
+      amount: numericAmount,
+      registered_by: formRegisteredBy
     };
 
     if (editingId) {
@@ -154,18 +155,18 @@ export default function AdminConsumosPage() {
       if (result.success) {
         await loadExpenses();
         handleCancel();
-        setSuccess('Consumo actualizado correctamente');
+        setSuccess('Gasto actualizado correctamente');
       } else {
-        setError(result.error || 'Error al actualizar el consumo');
+        setError(result.error || 'Error al actualizar el gasto');
       }
     } else {
       const result = await createExpense(expenseData);
       if (result.success) {
         await loadExpenses();
         handleCancel();
-        setSuccess('Consumo registrado correctamente');
+        setSuccess('Gasto registrado correctamente');
       } else {
-        setError(result.error || 'Error al registrar el consumo');
+        setError(result.error || 'Error al registrar el gasto');
       }
     }
 
@@ -178,6 +179,7 @@ export default function AdminConsumosPage() {
     setFormCategory(expense.category as ExpenseCategory);
     setFormDescription(expense.description || '');
     setFormAmount(expense.amount.toString());
+    setFormRegisteredBy(expense.registered_by || 'Cintia');
     setEditingId(expense.id);
     setIsFormOpen(true);
     setError(null);
@@ -185,20 +187,20 @@ export default function AdminConsumosPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este consumo?')) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este gasto?')) {
       return;
     }
 
     setLoading(true);
     const result = await deleteExpense(id);
-    
+
     if (result.success) {
       await loadExpenses();
-      setSuccess('Consumo eliminado correctamente');
+      setSuccess('Gasto eliminado correctamente');
     } else {
-      setError(result.error || 'Error al eliminar el consumo');
+      setError(result.error || 'Error al eliminar el gasto');
     }
-    
+
     setLoading(false);
   };
 
@@ -210,6 +212,7 @@ export default function AdminConsumosPage() {
     setFormCategory(EXPENSE_CATEGORIES[0]);
     setFormDescription('');
     setFormAmount('');
+    setFormRegisteredBy('Cintia');
     setError(null);
     setSuccess(null);
   };
@@ -221,6 +224,7 @@ export default function AdminConsumosPage() {
     setFormCategory(EXPENSE_CATEGORIES[0]);
     setFormDescription('');
     setFormAmount('');
+    setFormRegisteredBy('Cintia');
     setError(null);
     setSuccess(null);
     setIsFormOpen(true);
@@ -234,7 +238,7 @@ export default function AdminConsumosPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h2 className="text-2xl font-bold text-[#2D2A32]">Panel de Consumos</h2>
+        <h2 className="text-2xl font-bold text-[#2D2A32]">Panel de Gastos</h2>
         <p className="text-[#6B6570] mt-1">
           Registro y seguimiento de gastos operativos
         </p>
@@ -271,7 +275,7 @@ export default function AdminConsumosPage() {
           {!isFormOpen && (
             <Button onClick={openNewExpenseForm} variant="primary" size="sm">
               <Plus size={16} className="mr-1" />
-              Nuevo Consumo
+              Nuevo Gasto
             </Button>
           )}
         </div>
@@ -285,12 +289,12 @@ export default function AdminConsumosPage() {
               <TrendingDown className="text-red-600" size={24} />
             </div>
             <div>
-              <p className="text-sm text-red-600 font-medium">Total Consumos</p>
+              <p className="text-sm text-red-600 font-medium">Total Gastos</p>
               <p className="text-2xl font-bold text-red-700">
                 {formatCurrency(totalExpenses)}
               </p>
               <p className="text-xs text-red-500">
-                {selectedMonth 
+                {selectedMonth
                   ? `${MONTH_NAMES[selectedMonth - 1]} ${selectedYear}`
                   : `Año ${selectedYear}`
                 }
@@ -308,9 +312,9 @@ export default function AdminConsumosPage() {
         <Card>
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-[#2D2A32]">
-              {editingId ? 'Editar' : 'Nuevo'} Consumo
+              {editingId ? 'Editar' : 'Nuevo'} Gasto
             </h3>
-            <button 
+            <button
               onClick={handleCancel}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
@@ -319,7 +323,23 @@ export default function AdminConsumosPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Registrado por
+                </label>
+                <select
+                  value={formRegisteredBy}
+                  onChange={(e) => setFormRegisteredBy(e.target.value)}
+                  className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none bg-white font-medium text-[#2D2A32]"
+                  disabled={loading}
+                  required
+                >
+                  <option value="Cintia">Cintia</option>
+                  <option value="Daniela">Daniela</option>
+                </select>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Año
@@ -461,12 +481,12 @@ export default function AdminConsumosPage() {
               const Icon = getCategoryIcon(category);
               const color = categoryColors[category] || '#9A94A0';
               return (
-                <div 
+                <div
                   key={category}
                   className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <div 
+                    <div
                       className="w-8 h-8 rounded-full flex items-center justify-center"
                       style={{ backgroundColor: `${color}30` }}
                     >
@@ -489,7 +509,7 @@ export default function AdminConsumosPage() {
       {/* Expenses Table */}
       <Card>
         <h3 className="text-lg font-semibold text-[#2D2A32] mb-4">
-          Registro de Consumos
+          Registro de Gastos
         </h3>
 
         <div className="overflow-x-auto">
@@ -497,10 +517,16 @@ export default function AdminConsumosPage() {
             <thead>
               <tr className="border-b border-[#E8E5F0]">
                 <th className="text-left py-3 px-4 text-sm font-medium text-[#6B6570]">
+                  Carga
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-[#6B6570]">
                   Período
                 </th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-[#6B6570]">
                   Categoría
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-[#6B6570]">
+                  Responsable
                 </th>
                 <th className="text-left py-3 px-4 text-sm font-medium text-[#6B6570]">
                   Descripción
@@ -527,18 +553,25 @@ export default function AdminConsumosPage() {
                 filteredExpenses.map((expense) => {
                   const Icon = getCategoryIcon(expense.category);
                   const color = categoryColors[expense.category] || '#9A94A0';
-                  
+
                   return (
                     <tr
                       key={expense.id}
                       className="border-b border-[#E8E5F0] last:border-0 hover:bg-gray-50"
                     >
+                      <td className="py-3 px-4 text-[#6B6570] text-sm">
+                        {new Date(expense.created_at).toLocaleDateString('es-AR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: '2-digit'
+                        })}
+                      </td>
                       <td className="py-3 px-4 text-[#2D2A32]">
                         {MONTH_NAMES[expense.month - 1]} {expense.year}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <div 
+                          <div
                             className="w-8 h-8 rounded-full flex items-center justify-center"
                             style={{ backgroundColor: `${color}30` }}
                           >
@@ -546,6 +579,15 @@ export default function AdminConsumosPage() {
                           </div>
                           <span className="text-[#2D2A32]">{expense.category}</span>
                         </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Badge variant="default" className={
+                          expense.registered_by === 'Cintia'
+                            ? 'bg-purple-100 text-purple-700 border-purple-200'
+                            : 'bg-blue-100 text-blue-700 border-blue-200'
+                        }>
+                          {expense.registered_by || '—'}
+                        </Badge>
                       </td>
                       <td className="py-3 px-4 text-[#6B6570]">
                         {expense.description || '—'}
@@ -577,7 +619,7 @@ export default function AdminConsumosPage() {
               ) : (
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-[#6B6570]">
-                    No hay consumos registrados para el período seleccionado
+                    No hay gastos registrados para el período seleccionado
                   </td>
                 </tr>
               )}

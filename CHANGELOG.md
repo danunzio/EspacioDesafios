@@ -7,6 +7,30 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [1.0.3] - 2026-02-18
+
+### ✨ Agregado
+
+- **Registro y verificación de pagos** desde el panel profesional:
+  - El profesional registra pagos en `/profesional/facturacion`
+  - Se notifica automáticamente a administración en `/admin/notificaciones`
+- **Pantalla de revisión de pagos** en `/admin/pagos`:
+  - Listado por período de pagos reportados
+  - Acciones para aprobar o rechazar pagos
+- **Integración con liquidaciones** en `/admin/liquidaciones`:
+  - Resumen por profesional con:
+    - Comisión total a abonar a Espacio Desafíos
+    - Pagos verificados imputados por profesional
+    - Saldo pendiente a abonar al centro
+  - Detalle de pagos por profesional con estado (Pendiente/Verificado/Rechazado)
+- **Actividad Reciente (Admin)** ahora muestra también pagos registrados por profesionales
+
+### 🐛 Corregido
+
+- **admin/pagos/page.tsx** – Corregido tipo de `Badge` usando `variant="error"` en lugar de `danger`
+
+---
+
 ## [1.0.2] - 2026-02-16
 
 ### ✨ Agregado

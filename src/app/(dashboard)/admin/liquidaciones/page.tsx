@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, Fragment } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +19,8 @@ import {
 } from 'lucide-react';
 import { MONTH_NAMES } from '@/types';
 import { formatCurrency } from '@/lib/utils/calculations';
-import { 
-  calculateLiquidation, 
+import {
+  calculateLiquidation,
   createOrUpdateLiquidation,
   markLiquidationAsPaid,
   approveLiquidation,
@@ -28,6 +28,7 @@ import {
   type Liquidation
 } from '@/lib/actions/liquidations';
 import { getProfessionals, type Professional } from '@/lib/actions/professionals';
+import { getAllPaymentsToClinic, type PaymentToClinic } from '@/lib/actions/payments';
 
 interface CalculationResult {
   professionalId: string;
@@ -54,6 +55,7 @@ export default function AdminLiquidationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState<string | null>(null);
+  const [payments, setPayments] = useState<PaymentToClinic[]>([]);
 
   // Load professionals
   const loadProfessionals = useCallback(async () => {
@@ -95,7 +97,7 @@ export default function AdminLiquidationsPage() {
 
       for (const prof of professionalsToProcess) {
         const result = await calculateLiquidation(prof.id, year, month);
-        
+
         if (result.success && result.data) {
           results.push({
             professionalId: prof.id,
@@ -116,9 +118,14 @@ export default function AdminLiquidationsPage() {
         setExistingLiquidations(liqResult.data);
       }
 
+      const payResult = await getAllPaymentsToClinic(year, month);
+      if (payResult.success && payResult.data) {
+        setPayments(payResult.data as any);
+      }
+
       setCalculations(results);
       setIsCalculated(true);
-      
+
       if (results.length > 0) {
         setSuccess(`Se calcularon ${results.length} liquidaciones correctamente`);
       } else {
@@ -213,7 +220,7 @@ export default function AdminLiquidationsPage() {
   const totalSessions = calculations.reduce((acc, c) => acc + c.totalSessions, 0);
   const totalAmount = calculations.reduce((acc, c) => acc + c.totalAmount, 0);
   const totalCommission = totalAmount * 0.25; // 25% commission
-  const totalNet = totalAmount - totalCommission;
+  const totalVerifiedPayments = payments.filter(p => p.verification_status === 'approved').reduce((sum, p) => sum + (p.amount || 0), 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -344,9 +351,9 @@ export default function AdminLiquidationsPage() {
           <Card variant="soft" className="text-center">
             <FileText className="mx-auto mb-2 text-[#F4C2C2]" size={24} />
             <p className="text-2xl font-bold text-[#2D2A32]">
-              {formatCurrency(totalNet)}
+              {formatCurrency(totalCommission)}
             </p>
-            <p className="text-xs text-[#6B6570]">Total a Pagar</p>
+            <p className="text-xs text-[#6B6570]">A Abonar a Espacio Desafíos</p>
           </Card>
         </div>
       )}
@@ -381,7 +388,10 @@ export default function AdminLiquidationsPage() {
                     Comisión 25%
                   </th>
                   <th className="text-right py-3 px-4 text-sm font-medium text-[#6B6570]">
-                    A Pagar
+                    A Pagar (Pendiente)
+                  </th>
+                  <th className="text-right py-3 px-4 text-sm font-medium text-[#6B6570]">
+                    Pagos Verificados
                   </th>
                   <th className="text-center py-3 px-4 text-sm font-medium text-[#6B6570]">
                     Estado
@@ -395,13 +405,15 @@ export default function AdminLiquidationsPage() {
                 {calculations.map((calc) => {
                   const liquidation = getLiquidationForProfessional(calc.professionalId);
                   const commission = calc.totalAmount * 0.25;
-                  const net = calc.totalAmount - commission;
+                  const verifiedForProf = payments
+                    .filter(p => p.professional_id === calc.professionalId && p.verification_status === 'approved')
+                    .reduce((sum, p) => sum + (p.amount || 0), 0);
+                  const pendingForProf = Math.max(commission - verifiedForProf, 0);
                   const isExpanded = showDetails === calc.professionalId;
 
                   return (
-                    <>
+                    <Fragment key={calc.professionalId}>
                       <tr
-                        key={calc.professionalId}
                         className="border-b border-[#E8E5F0] last:border-0 hover:bg-gray-50"
                       >
                         <td className="py-3 px-4 font-medium text-[#2D2A32]">
@@ -417,7 +429,10 @@ export default function AdminLiquidationsPage() {
                           {formatCurrency(commission)}
                         </td>
                         <td className="py-3 px-4 text-right font-bold text-[#2D2A32]">
-                          {formatCurrency(net)}
+                          {formatCurrency(pendingForProf)}
+                        </td>
+                        <td className="py-3 px-4 text-right text-[#2D2A32]">
+                          {formatCurrency(verifiedForProf)}
                         </td>
                         <td className="py-3 px-4 text-center">
                           {liquidation ? getStatusBadge(liquidation.status) : '—'}
@@ -457,7 +472,7 @@ export default function AdminLiquidationsPage() {
                       </tr>
                       {isExpanded && (
                         <tr>
-                          <td colSpan={7} className="py-4 px-4 bg-gray-50">
+                          <td colSpan={8} className="py-4 px-4 bg-gray-50">
                             <div className="text-sm">
                               <h4 className="font-semibold text-[#2D2A32] mb-2">
                                 Desglose por Módulo
@@ -494,11 +509,50 @@ export default function AdminLiquidationsPage() {
                               ) : (
                                 <p className="text-[#6B6570]">No hay desglose disponible</p>
                               )}
+                              <div className="mt-4">
+                                <h4 className="font-semibold text-[#2D2A32] mb-2">
+                                  Pagos del Profesional
+                                </h4>
+                                {payments.filter(p => p.professional_id === calc.professionalId).length > 0 ? (
+                                  <div className="space-y-2">
+                                    {payments.filter(p => p.professional_id === calc.professionalId).map(p => (
+                                      <div key={p.id} className="flex items-center justify-between p-2 bg-white rounded-xl">
+                                        <div>
+                                          <p className="font-medium text-[#2D2A32]">{formatCurrency(p.amount)}</p>
+                                          <p className="text-xs text-[#6B6570]">
+                                            {new Date(p.payment_date).toLocaleDateString('es-CL')} • {p.payment_type === 'efectivo' ? 'Efectivo' : 'Transferencia'}
+                                          </p>
+                                          {p.notes && <p className="text-xs text-[#9A94A0] mt-1">{p.notes}</p>}
+                                        </div>
+                                        <Badge variant={
+                                          p.verification_status === 'approved'
+                                            ? 'success'
+                                            : p.verification_status === 'rejected'
+                                              ? 'error'
+                                              : 'warning'
+                                        }>
+                                          {p.verification_status === 'approved'
+                                            ? 'Verificado'
+                                            : p.verification_status === 'rejected'
+                                              ? 'Rechazado'
+                                              : 'Pendiente'}
+                                        </Badge>
+                                      </div>
+                                    ))}
+                                    <div className="pt-2 border-t border-gray-200 flex justify-between">
+                                      <span className="text-[#6B6570]">Pendiente a abonar a Espacio Desafíos:</span>
+                                      <span className="font-semibold text-[#2D2A32]">{formatCurrency(Math.max(commission - verifiedForProf, 0))}</span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-[#6B6570]">Sin pagos cargados</p>
+                                )}
+                              </div>
                             </div>
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>

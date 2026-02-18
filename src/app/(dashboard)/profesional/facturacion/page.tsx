@@ -22,7 +22,14 @@ import { MONTH_NAMES } from '@/types';
 import { formatCurrency } from '@/lib/utils/calculations';
 import { createPaymentToClinic, getPaymentsToClinic } from '@/lib/actions/payments';
 import { useAuth } from '@/lib/hooks/use-auth';
-import { getLiquidations } from '@/lib/actions/liquidations';
+import { getLiquidations, calculateLiquidation } from '@/lib/actions/liquidations';
+
+const VALUE_TYPE_LABELS: Record<string, string> = {
+  nomenclatura: 'Nomenclador',
+  modulos: 'Módulos',
+  osde: 'OSDE',
+  sesion: 'Sesión Individual'
+};
 
 interface BillingData {
   id: string;
@@ -85,7 +92,7 @@ export default function ProfessionalBillingPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [billingHistory, setBillingHistory] = useState<BillingData[]>([]);
-  
+
   // Payment form state
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
@@ -153,18 +160,59 @@ export default function ProfessionalBillingPage() {
     loadBilling();
   }, [user]);
 
-  // Load payments for current month
+  // Load payments and optional estimation
   useEffect(() => {
-    const loadPayments = async () => {
+    const loadMonthlyContext = async () => {
+      if (!user) return;
       setLoading(true);
+
+      // Load actual payments
       const result = await getPaymentsToClinic(selectedYear, selectedMonth);
       if (result.success && result.data) {
         setPayments(result.data);
       }
+
+      // If no official billing exists for this month, get an estimate
+      const hasOfficial = billingHistory.some(b => b.year === selectedYear && b.month === selectedMonth);
+      if (!hasOfficial) {
+        const estResult = await calculateLiquidation(user.id, selectedYear, selectedMonth);
+        if (estResult.success && estResult.data && estResult.data.totalSessions > 0) {
+          const estimate: BillingData = {
+            id: 'estimate',
+            year: estResult.data.year,
+            month: estResult.data.month,
+            total_sessions: estResult.data.totalSessions,
+            total_amount: estResult.data.totalAmount,
+            professional_percentage: estResult.data.professionalPercentage,
+            professional_amount: estResult.data.professionalAmount,
+            clinic_amount: estResult.data.clinicAmount,
+            status: 'pending',
+            module_breakdown: estResult.data.moduleBreakdown.map(mb => ({
+              moduleName: mb.moduleName,
+              sessionCount: mb.sessionCount,
+              rate: mb.rate,
+              amount: mb.amount
+            }))
+          };
+          // Don't modify billingHistory, just use a local state for estimate if needed?
+          // Actually let's add it to a temporary display state
+          setEstimate(estimate);
+        } else {
+          setEstimate(null);
+        }
+      } else {
+        setEstimate(null);
+      }
       setLoading(false);
     };
-    loadPayments();
-  }, [selectedYear, selectedMonth]);
+    loadMonthlyContext();
+  }, [selectedYear, selectedMonth, user, billingHistory]);
+
+  const [estimate, setEstimate] = useState<BillingData | null>(null);
+
+  const displayBilling = useMemo(() => {
+    return currentBilling || estimate;
+  }, [currentBilling, estimate]);
 
   const handlePrevMonth = () => {
     if (selectedMonth === 1) {
@@ -221,7 +269,7 @@ export default function ProfessionalBillingPage() {
   };
 
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-  const remainingAmount = currentBilling ? currentBilling.clinic_amount - totalPaid : 0;
+  const remainingAmount = displayBilling ? displayBilling.clinic_amount - totalPaid : 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -276,28 +324,38 @@ export default function ProfessionalBillingPage() {
         </div>
       </Card>
 
-      {currentBilling ? (
+      {estimate && !currentBilling && (
+        <div className="p-3 bg-blue-50 text-blue-700 rounded-xl flex items-start gap-2 border border-blue-100">
+          <AlertCircle className="flex-shrink-0 mt-0.5" size={18} />
+          <div>
+            <p className="font-semibold text-sm">Vista Previa Estimada</p>
+            <p className="text-xs">Esta es una estimación basada en tus sesiones guardadas. La liquidación oficial será generada por administración.</p>
+          </div>
+        </div>
+      )}
+
+      {displayBilling ? (
         <>
           {/* Resumen por Tipo de Módulo */}
           <Card className="bg-gradient-to-br from-[#A38EC3]/5 to-[#F4C2C2]/5">
             <div className="flex items-center gap-2 mb-6">
               <Briefcase className="text-[#A38EC3]" size={24} />
               <h3 className="text-lg font-semibold text-[#2D2A32]">
-                Resumen por Tipo de Módulo - {MONTH_NAMES[currentBilling.month - 1]} {currentBilling.year}
+                Resumen por Tipo de Módulo - {MONTH_NAMES[displayBilling.month - 1]} {displayBilling.year}
               </h3>
             </div>
 
             <div className="space-y-3">
-              {currentBilling.module_breakdown.map((module, index) => (
+              {displayBilling.module_breakdown.map((module, index) => (
                 <div
                   key={index}
                   className="bg-white rounded-2xl p-4 shadow-sm"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold text-[#2D2A32]">{module.moduleName}</h4>
+                    <h4 className="font-semibold text-[#2D2A32]">{VALUE_TYPE_LABELS[module.moduleName] || module.moduleName}</h4>
                     <Badge variant="default">{module.sessionCount} sesiones</Badge>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                     <div>
                       <p className="text-[#6B6570]">Valor</p>
                       <p className="font-medium text-[#2D2A32]">{formatCurrency(module.rate)}</p>
@@ -307,15 +365,9 @@ export default function ProfessionalBillingPage() {
                       <p className="font-medium text-[#2D2A32]">{formatCurrency(module.amount)}</p>
                     </div>
                     <div>
-                      <p className="text-[#6B6570]">Comisión ({currentBilling.professional_percentage}%)</p>
+                      <p className="text-[#6B6570]">Comisión ({displayBilling.professional_percentage}%)</p>
                       <p className="font-medium text-[#E8A5A5]">
-                        {formatCurrency(module.amount * (currentBilling.professional_percentage / 100))}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[#6B6570]">Neto</p>
-                      <p className="font-medium text-[#A38EC3]">
-                        {formatCurrency(module.amount * (1 - currentBilling.professional_percentage / 100))}
+                        {formatCurrency(module.amount * (displayBilling.professional_percentage / 100))}
                       </p>
                     </div>
                   </div>
@@ -324,7 +376,7 @@ export default function ProfessionalBillingPage() {
             </div>
 
             <div className="mt-4 pt-4 border-t border-[#E8E5F0]">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="bg-white rounded-2xl p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
                     <Calendar className="text-[#A38EC3]" size={16} />
@@ -333,7 +385,7 @@ export default function ProfessionalBillingPage() {
                     </span>
                   </div>
                   <p className="text-2xl font-bold text-[#2D2A32]">
-                    {currentBilling.total_sessions}
+                    {displayBilling.total_sessions}
                   </p>
                 </div>
 
@@ -345,7 +397,7 @@ export default function ProfessionalBillingPage() {
                     </span>
                   </div>
                   <p className="text-2xl font-bold text-[#2D2A32]">
-                    {formatCurrency(currentBilling.total_amount)}
+                    {formatCurrency(displayBilling.total_amount)}
                   </p>
                 </div>
 
@@ -353,37 +405,28 @@ export default function ProfessionalBillingPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <Percent className="text-[#F4C2C2]" size={16} />
                     <span className="text-sm font-medium text-[#6B6570]">
-                      Comisión Total
+                      Comisión Total a abonar a Espacio Desafios
                     </span>
                   </div>
                   <p className="text-2xl font-bold text-[#E8A5A5]">
-                    {formatCurrency(currentBilling.clinic_amount)}
+                    {formatCurrency(displayBilling.clinic_amount)}
                   </p>
                 </div>
 
-                <div className="bg-white rounded-2xl p-4 shadow-sm">
-                  <div className="flex items-center gap-2 mb-2">
-                    <DollarSign className="text-[#A8E6CF]" size={16} />
-                    <span className="text-sm font-medium text-[#6B6570]">
-                      Tu Pago
-                    </span>
-                  </div>
-                  <p className="text-2xl font-bold text-[#2D2A32]">
-                    {formatCurrency(currentBilling.professional_amount)}
-                  </p>
-                </div>
               </div>
             </div>
 
             <div className="mt-4 flex items-center justify-between">
-              <Badge variant={currentBilling.status === 'paid' ? 'success' : currentBilling.status === 'approved' ? 'warning' : 'default'}>
-                {currentBilling.status === 'paid'
+              <Badge variant={displayBilling.status === 'paid' ? 'success' : displayBilling.status === 'approved' ? 'warning' : 'default'}>
+                {displayBilling.status === 'paid'
                   ? 'Pagado'
-                  : currentBilling.status === 'approved'
-                  ? 'Aprobado'
-                  : 'Pendiente'}
+                  : displayBilling.status === 'approved'
+                    ? 'Aprobado'
+                    : displayBilling.id === 'estimate'
+                      ? 'Borrador (Sesiones)'
+                      : 'Pendiente'}
               </Badge>
-              {currentBilling.status === 'paid' && (
+              {displayBilling.status === 'paid' && (
                 <span className="text-sm text-green-600 flex items-center gap-1">
                   <CheckCircle size={16} />
                   Pago procesado
@@ -408,11 +451,11 @@ export default function ProfessionalBillingPage() {
               </div>
             )}
 
-            {!showPaymentForm ? (
-              <div className="space-y-4">
-                {payments.length > 0 ? (
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-[#2D2A32]">Pagos realizados este mes</h4>
+            <div className="space-y-6">
+              {payments.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-medium text-[#2D2A32]">Pagos realizados este mes</h4>
+                  <div className="space-y-2">
                     {payments.map((payment) => (
                       <div
                         key={payment.id}
@@ -429,130 +472,153 @@ export default function ProfessionalBillingPage() {
                             <p className="text-xs text-[#9A94A0] mt-1">{payment.notes}</p>
                           )}
                         </div>
-                        <Badge variant="success">Registrado</Badge>
+                        <Badge variant={
+                          payment.verification_status === 'approved'
+                            ? 'success'
+                            : payment.verification_status === 'rejected'
+                              ? 'danger'
+                              : 'warning'
+                        }>
+                          {payment.verification_status === 'approved'
+                            ? 'Verificado'
+                            : payment.verification_status === 'rejected'
+                              ? 'Rechazado'
+                              : 'Pendiente'}
+                        </Badge>
                       </div>
                     ))}
-                    <div className="pt-3 border-t border-gray-200">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-[#6B6570]">Total pagado:</span>
-                        <span className="font-medium text-[#2D2A32]">{formatCurrency(totalPaid)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm mt-1">
-                        <span className="text-[#6B6570]">Pendiente:</span>
-                        <span className="font-medium text-[#E8A5A5]">{formatCurrency(remainingAmount)}</span>
-                      </div>
+                  </div>
+                  <div className="pt-3 border-t border-gray-200">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-[#6B6570]">Total pagado:</span>
+                      <span className="font-medium text-[#2D2A32]">{formatCurrency(totalPaid)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mt-1">
+                      <span className="text-[#6B6570]">Pendiente:</span>
+                      <span className="font-medium text-[#E8A5A5]">{formatCurrency(remainingAmount)}</span>
                     </div>
                   </div>
-                ) : (
-                  <div className="text-center py-6 text-[#6B6570]">
-                    <Wallet size={48} className="mx-auto mb-3 opacity-50" />
-                    <p>No has registrado pagos este mes</p>
-                    <p className="text-sm mt-1">
-                      Comisión pendiente: {formatCurrency(currentBilling.clinic_amount)}
-                    </p>
-                  </div>
-                )}
-
-                <Button
-                  variant="primary"
-                  onClick={() => setShowPaymentForm(true)}
-                  className="w-full"
-                >
-                  <DollarSign size={18} className="mr-2" />
-                  Registrar Nuevo Pago
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Fecha de pago
-                  </label>
-                  <input
-                    type="date"
-                    value={paymentDate}
-                    onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none"
-                  />
                 </div>
+              )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tipo de pago
-                  </label>
-                  <select
-                    value={paymentType}
-                    onChange={(e) => setPaymentType(e.target.value as 'efectivo' | 'transferencia')}
-                    className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none bg-white"
-                  >
-                    <option value="transferencia">Transferencia</option>
-                    <option value="efectivo">Efectivo</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Importe ($)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A94A0]">$</span>
-                    <input
-                      type="number"
-                      value={paymentAmount}
-                      onChange={(e) => setPaymentAmount(e.target.value)}
-                      placeholder="0"
-                      className="w-full pl-8 pr-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none"
-                      min="1"
-                      step="0.01"
-                    />
-                  </div>
-                  {remainingAmount > 0 && (
-                    <p className="text-xs text-[#6B6570] mt-1">
-                      Pendiente: {formatCurrency(remainingAmount)}
-                    </p>
+              {!showPaymentForm ? (
+                <div className="space-y-4">
+                  {payments.length === 0 && (
+                    <div className="text-center py-6 text-[#6B6570]">
+                      <Wallet size={48} className="mx-auto mb-3 opacity-50" />
+                      <p>No has registrado pagos este mes</p>
+                      <p className="text-sm mt-1">
+                        Comisión Total a abonar a Espacio Desafios: {formatCurrency(displayBilling?.clinic_amount || 0)}
+                      </p>
+                    </div>
                   )}
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Notas (opcional)
-                  </label>
-                  <textarea
-                    value={paymentNotes}
-                    onChange={(e) => setPaymentNotes(e.target.value)}
-                    placeholder="Número de transferencia, comprobante, etc."
-                    className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none resize-none"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex gap-3">
                   <Button
                     variant="primary"
-                    onClick={handleSavePayment}
-                    disabled={saving || !paymentAmount}
-                    className="flex-1"
+                    onClick={() => setShowPaymentForm(true)}
+                    className="w-full"
                   >
-                    <Save size={18} className="mr-2" />
-                    {saving ? 'Guardando...' : 'Guardar Pago'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowPaymentForm(false)}
-                    disabled={saving}
-                  >
-                    Cancelar
+                    <DollarSign size={18} className="mr-2" />
+                    Registrar Pago
                   </Button>
                 </div>
+              ) : (
+                <div className="space-y-4 pt-4 border-t border-gray-100 bg-gray-50/50 p-4 rounded-2xl">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-semibold text-[#2D2A32]">Registrar Nuevo Pago</h4>
+                    <button
+                      onClick={() => setShowPaymentForm(false)}
+                      className="text-xs text-[#6B6570] hover:text-[#A38EC3] transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
 
-                <div className="p-3 bg-[#F9E79F]/30 rounded-xl flex items-start gap-2">
-                  <AlertCircle className="text-[#D4B850] flex-shrink-0 mt-0.5" size={16} />
-                  <p className="text-xs text-[#6B6570]">
-                    Al guardar el pago, se enviará una notificación al administrador de Espacio Desafíos.
-                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Fecha de pago
+                      </label>
+                      <input
+                        type="date"
+                        value={paymentDate}
+                        onChange={(e) => setPaymentDate(e.target.value)}
+                        className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tipo de pago
+                      </label>
+                      <select
+                        value={paymentType}
+                        onChange={(e) => setPaymentType(e.target.value as 'efectivo' | 'transferencia')}
+                        className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none bg-white"
+                      >
+                        <option value="transferencia">Transferencia</option>
+                        <option value="efectivo">Efectivo</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Importe ($)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A94A0]">$</span>
+                      <input
+                        type="number"
+                        value={paymentAmount}
+                        onChange={(e) => setPaymentAmount(e.target.value)}
+                        placeholder="0"
+                        className="w-full pl-8 pr-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none"
+                        min="1"
+                        step="0.01"
+                      />
+                    </div>
+                    {remainingAmount > 0 && (
+                      <p className="text-xs text-[#6B6570] mt-1">
+                        Monto restante por cubrir: {formatCurrency(remainingAmount)}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Notas (opcional)
+                    </label>
+                    <textarea
+                      value={paymentNotes}
+                      onChange={(e) => setPaymentNotes(e.target.value)}
+                      placeholder="Número de transferencia, comprobante, etc."
+                      className="w-full px-4 py-2 rounded-xl border-2 border-gray-200 focus:border-[#A38EC3] focus:outline-none resize-none"
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="pt-2">
+                    <Button
+                      variant="primary"
+                      onClick={handleSavePayment}
+                      disabled={saving || !paymentAmount}
+                      className="w-full"
+                    >
+                      <Save size={18} className="mr-2" />
+                      {saving ? 'Guardando...' : 'Confirmar Pago'}
+                    </Button>
+                  </div>
+
+                  <div className="mt-2 p-3 bg-[#F9E79F]/30 rounded-xl flex items-start gap-2">
+                    <AlertCircle className="text-[#D4B850] flex-shrink-0 mt-0.5" size={16} />
+                    <p className="text-xs text-[#6B6570]">
+                      Este pago se sumará a los anteriores de este período.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </Card>
         </>
       ) : (

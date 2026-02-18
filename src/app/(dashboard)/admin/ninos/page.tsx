@@ -70,18 +70,18 @@ export default async function AdminChildrenPage() {
   // Transform data to match the expected format
   const formattedChildren = (children || []).map((child) => {
     const childProfs = childProfsMap.get(child.id) || { ids: [], names: [] };
-    
+
     // Include direct assigned professional if not already in the relation
-    const allProfIds = child.assigned_professional_id 
-      ? [child.assigned_professional_id, ...childProfs.ids] 
+    const allProfIds = child.assigned_professional_id
+      ? [child.assigned_professional_id, ...childProfs.ids]
       : childProfs.ids;
     const uniqueProfIds = [...new Set(allProfIds)];
-    
+
     return {
       id: child.id,
       full_name: child.full_name,
       birth_date: child.birth_date || '',
-      guardian_name: child.guardian_name || child.mother_name || 'Sin apoderado',
+      guardian_name: child.guardian_name || child.mother_name || 'Sin responsable',
       guardian_phone: child.guardian_phone || child.mother_phone || '',
       guardian_email: child.guardian_email || child.mother_email || '',
       assigned_professional_id: child.assigned_professional_id,
@@ -94,7 +94,7 @@ export default async function AdminChildrenPage() {
   });
 
   return (
-    <AdminChildrenClient 
+    <AdminChildrenClient
       initialChildren={formattedChildren}
       professionals={professionals || []}
     />
