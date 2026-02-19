@@ -81,7 +81,7 @@ export function Modal({
       {/* Modal content */}
       <div
         className={cn(
-          'relative w-full bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl transform transition-all duration-200 ease-out animate-slide-up sm:animate-scale-in',
+          'relative z-[60] w-full bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl transform transition-all duration-200 ease-out animate-slide-up sm:animate-scale-in',
           maxWidthClasses[maxWidth],
           'max-h-[85vh] sm:max-h-[90vh] flex flex-col',
           'mx-0 sm:mx-auto'

@@ -94,16 +94,20 @@ export default async function ProfessionalDashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4">
-        <Card variant="soft" className="text-center p-4">
-          <Baby className="mx-auto mb-2 text-[#A38EC3]" size={24} />
-          <p className="text-xl sm:text-2xl font-bold text-[#2D2A32]">{childrenCount}</p>
-          <p className="text-xs text-[#6B6570]">Mis Pacientes</p>
-        </Card>
-        <Card variant="soft" className="text-center p-4">
-          <Calendar className="mx-auto mb-2 text-[#F4C2C2]" size={24} />
-          <p className="text-xl sm:text-2xl font-bold text-[#2D2A32]">{totalSessions}</p>
-          <p className="text-xs text-[#6B6570]">Sesiones</p>
-        </Card>
+        <Link href="/profesional/ninos">
+          <Card variant="soft" className="text-center p-4 cursor-pointer hover:shadow-md transition-shadow">
+            <Baby className="mx-auto mb-2 text-[#A38EC3]" size={24} />
+            <p className="text-xl sm:text-2xl font-bold text-[#2D2A32]">{childrenCount}</p>
+            <p className="text-xs text-[#6B6570]">Mis Pacientes</p>
+          </Card>
+        </Link>
+        <Link href="/profesional/sesiones">
+          <Card variant="soft" className="text-center p-4 cursor-pointer hover:shadow-md transition-shadow">
+            <Calendar className="mx-auto mb-2 text-[#F4C2C2]" size={24} />
+            <p className="text-xl sm:text-2xl font-bold text-[#2D2A32]">{totalSessions}</p>
+            <p className="text-xs text-[#6B6570]">Sesiones</p>
+          </Card>
+        </Link>
       </div>
 
       {/* CTA Principal */}

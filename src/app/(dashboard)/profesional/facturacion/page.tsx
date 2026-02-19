@@ -377,7 +377,7 @@ export default function ProfessionalBillingPage() {
             </div>
 
             <div className="mt-4 pt-4 border-t border-[#E8E5F0]">
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
                 <div className="bg-white rounded-2xl p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
                     <Calendar className="text-[#A38EC3]" size={16} />
@@ -385,7 +385,7 @@ export default function ProfessionalBillingPage() {
                       Total Sesiones
                     </span>
                   </div>
-                  <p className="text-2xl font-bold text-[#2D2A32]">
+                  <p className="text-2xl font-bold text-[#2D2A32] text-center">
                     {displayBilling.total_sessions}
                   </p>
                 </div>
@@ -397,7 +397,7 @@ export default function ProfessionalBillingPage() {
                       Facturación Total
                     </span>
                   </div>
-                  <p className="text-2xl font-bold text-[#2D2A32]">
+                  <p className="text-2xl font-bold text-[#2D2A32] text-center">
                     {formatCurrency(displayBilling.total_amount)}
                   </p>
                 </div>
@@ -409,7 +409,7 @@ export default function ProfessionalBillingPage() {
                       Comisión Total a abonar a Espacio Desafios
                     </span>
                   </div>
-                  <p className="text-2xl font-bold text-[#E8A5A5]">
+                  <p className="text-2xl font-bold text-[#E8A5A5] text-center">
                     {formatCurrency(displayBilling.clinic_amount)}
                   </p>
                 </div>
@@ -518,9 +518,7 @@ export default function ProfessionalBillingPage() {
                     variant="primary"
                     onClick={() => setShowPaymentForm(true)}
                     className="w-full"
-                  >
-                    <DollarSign size={18} className="mr-2" />
-                    Informar Pago
+                  > Informar Pago
                   </Button>
                 </div>
               ) : (

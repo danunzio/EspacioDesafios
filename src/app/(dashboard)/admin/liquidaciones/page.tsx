@@ -15,8 +15,7 @@ import {
   RefreshCw,
   Download,
   Calendar,
-  Filter,
-  ChevronLeft
+  Filter
 } from 'lucide-react';
 import { MONTH_NAMES } from '@/types';
 import { formatCurrency } from '@/lib/utils/calculations';
@@ -30,7 +29,6 @@ import {
 } from '@/lib/actions/liquidations';
 import { getProfessionals, type Professional } from '@/lib/actions/professionals';
 import { getAllPaymentsToClinic, type PaymentToClinic } from '@/lib/actions/payments';
-import { useRouter } from 'next/navigation';
 
 interface CalculationResult {
   professionalId: string;
@@ -46,7 +44,6 @@ interface CalculationResult {
 }
 
 export default function AdminLiquidationsPage() {
-  const router = useRouter();
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [selectedProfessional, setSelectedProfessional] = useState<string>('all');
@@ -223,22 +220,15 @@ export default function AdminLiquidationsPage() {
   const totalSessions = calculations.reduce((acc, c) => acc + c.totalSessions, 0);
   const totalAmount = calculations.reduce((acc, c) => acc + c.totalAmount, 0);
   const totalCommission = totalAmount * 0.25; // 25% commission
+  const totalVerifiedPayments = payments.filter(p => p.verification_status === 'approved').reduce((sum, p) => sum + (p.amount || 0), 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => router.push('/admin')}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-        >
-          <ChevronLeft size={24} className="text-[#6B6570]" />
-        </button>
-        <div>
-          <h2 className="text-2xl font-bold text-[#2D2A32]">Liquidaciones</h2>
-          <p className="text-[#6B6570] mt-1">
-            Calcula y gestiona las liquidaciones mensuales de profesionales
-          </p>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold text-[#2D2A32]">Liquidaciones</h2>
+        <p className="text-[#6B6570] mt-1">
+          Calcula y gestiona las liquidaciones mensuales de profesionales
+        </p>
       </div>
 
       {/* Filters */}
@@ -296,7 +286,7 @@ export default function AdminLiquidationsPage() {
       <Card>
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-2">
-            <Calculator className="text-[#A38EC3]" size={24} />
+            
             <h3 className="text-lg font-semibold text-[#2D2A32]">
               Calcular Liquidación
             </h3>
@@ -314,8 +304,8 @@ export default function AdminLiquidationsPage() {
               </span>
             ) : (
               <>
-                <Calculator size={18} className="mr-2" />
-                Calcular Liquidación
+                
+                Calcular
               </>
             )}
           </Button>

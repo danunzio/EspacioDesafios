@@ -7,6 +7,23 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [1.1.3] - 2026-02-19
+
+### 🛠 Corregido
+
+- **Admin/Pagos**: Corregida consulta a `payments_to_clinic` que provocaba el error de embed entre `payments_to_clinic` y `profiles`. Ahora se resuelven los profesionales en una segunda consulta tipada.
+- **Dashboard Admin**: Corregido el tipo de `RecentActivity` y la construcción de `combinedRecent` para cumplir con TypeScript estricto.
+- **Modales**: Ajustado el z-index del contenido del modal para que no quede oculto detrás del fondo borroso al abrir los modales de profesionales y pacientes.
+
+### 💄 Mejorado
+
+- **Dashboard Profesional**: Las tarjetas de “Mis Pacientes” y “Sesiones” vuelven a ser clicables y redirigen a `/profesional/ninos` y `/profesional/sesiones`.
+- **Navegación Profesional**: Se reintrodujo la pestaña “Mi Facturación” en el `BottomNav`, apuntando a `/profesional/facturacion`.
+- **Admin/Más**: Simplificada la pantalla dejando solo el menú de accesos rápidos; la gestión de obras sociales quedó totalmente centralizada en `/admin/obras-sociales`.
+- **Admin/Consumos**: Eliminada la categoría de gasto **Gas** del panel de consumos.
+
+---
+
 ## [1.1.2] - 2026-02-18
 
 ### 🔄 Refactorización de Dashboards y Navegación

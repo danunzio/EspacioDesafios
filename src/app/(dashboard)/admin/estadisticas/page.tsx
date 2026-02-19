@@ -239,11 +239,11 @@ export default function EstadisticasPage() {
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="p-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center sm:justify-start gap-3">
             <div className="w-12 h-12 rounded-full bg-[#A38EC3]/15 flex items-center justify-center">
               <DollarSign className="text-[#A38EC3]" size={24} />
             </div>
-            <div>
+            <div className="text-center sm:text-left">
               <p className="text-sm text-[#6B6570]">
                 {selectedMonth ? 'Facturación del Mes' : 'Facturación Total'}
               </p>
@@ -255,11 +255,11 @@ export default function EstadisticasPage() {
         </Card>
 
         <Card className="p-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center sm:justify-start gap-3">
             <div className="w-12 h-12 rounded-full bg-[#A8E6CF]/15 flex items-center justify-center">
               <Calendar className="text-[#8ED9B8]" size={24} />
             </div>
-            <div>
+            <div className="text-center sm:text-left">
               <p className="text-sm text-[#6B6570]">
                 {selectedMonth ? 'Sesiones del Mes' : 'Total Sesiones'}
               </p>
@@ -269,11 +269,11 @@ export default function EstadisticasPage() {
         </Card>
 
         <Card className="p-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center sm:justify-start gap-3">
             <div className="w-12 h-12 rounded-full bg-[#F4C2C2]/15 flex items-center justify-center">
               <TrendingUp className="text-[#E8A5A5]" size={24} />
             </div>
-            <div>
+            <div className="text-center sm:text-left">
               <p className="text-sm text-[#6B6570]">Promedio Mensual</p>
               <p className="text-xl font-bold text-[#2D2A32]">{displayStats.promedioSesiones} ses.</p>
             </div>

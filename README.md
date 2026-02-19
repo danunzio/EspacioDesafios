@@ -649,6 +649,7 @@ Todos los elementos interactivos tienen un tamaño mínimo de 44x44px para cumpl
 #### Header (Esquina superior derecha):
 - 🔔 **Campana**: Notificaciones (badge rojo si hay no leídas)
 - ⚙️ **Tuerca**: Configuración
+- Touch targets de 44x44px para accesibilidad
 
 #### Bottom Navigation (Admin):
 - 🏠 Inicio
@@ -661,6 +662,43 @@ Todos los elementos interactivos tienen un tamaño mínimo de 44x44px para cumpl
 - 🏠 Inicio
 - 👶 Pacientes
 - 📅 Sesiones
+- 🧾 Facturacion
+
+---
+
+## 🧩 Componentes UI
+
+### Componentes Base
+
+| Componente | Descripción | Props principales |
+|------------|-------------|-------------------|
+| **Button** | Botón con variantes y estados | `variant`, `size`, `loading`, `leftIcon`, `rightIcon` |
+| **Input** | Campo de texto con validación | `label`, `error`, `hint`, `leftIcon`, `rightIcon` |
+| **Select** | Selector desplegable | `options`, `label`, `error`, `hint` |
+| **Textarea** | Área de texto multilínea | `label`, `error`, `hint`, `rows` |
+| **Badge** | Etiqueta de estado | `variant`, `size` |
+| **Card** | Contenedor con sombra | `variant`, `onClick` |
+| **Modal** | Ventana modal | `isOpen`, `onClose`, `title`, `maxWidth` |
+
+### Componentes de Carga
+
+| Componente | Uso |
+|------------|-----|
+| **Skeleton** | Placeholder durante carga de datos |
+| **SkeletonCard** | Skeleton para tarjetas |
+| **SkeletonList** | Skeleton para listados |
+| **SkeletonTable** | Skeleton para tablas |
+| **Spinner** | Indicador de carga circular |
+| **LoadingOverlay** | Overlay de carga sobre contenido |
+| **LoadingState** | Estado de carga centrado |
+
+### Componentes de Feedback
+
+| Componente | Uso |
+|------------|-----|
+| **ToastProvider** | Provider para notificaciones toast |
+| **useToast()** | Hook para mostrar toasts |
+| **InstallPrompt** | Prompt de instalación PWA |
 
 ---
 

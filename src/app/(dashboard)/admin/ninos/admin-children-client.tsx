@@ -191,7 +191,7 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
         onClick={() => setIsAddModalOpen(true)}
         className="w-full"
       >
-        <Plus size={18} className="mr-2" />
+        
         Nuevo Paciente
       </Button>
 

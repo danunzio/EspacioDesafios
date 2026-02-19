@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { AdminDashboardClient } from './admin-dashboard-client'
+import { AdminDashboardClient, type RecentActivity } from './admin-dashboard-client'
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient()
@@ -53,11 +53,13 @@ export default async function AdminDashboardPage() {
     .eq('is_paid', false)
     .eq('month', currentMonth)
     .eq('year', currentYear)
-
+  
   const { count: pendingPayments } = await supabase
     .from('payments_to_clinic')
     .select('*', { count: 'exact', head: true })
     .eq('verification_status', 'pending')
+    .eq('month', currentMonth)
+    .eq('year', currentYear)
 
   const { data: recentActivity } = await supabase
     .from('monthly_sessions')
@@ -73,32 +75,33 @@ export default async function AdminDashboardPage() {
     .from('payments_to_clinic')
     .select(`
       *,
-      profiles:profiles!payments_to_clinic_professional_id_fkey(full_name)
+      profiles:professional_id(full_name)
     `)
     .order('payment_date', { ascending: false })
     .limit(5)
 
-  const combinedRecent = [
-    ...(recentActivity || []).map(a => ({
-      id: a.id,
-      kind: 'sesion' as const,
-      children: a.children,
-      profiles: a.profiles,
-      session_count: a.session_count,
-      total_amount: a.total_amount,
-      created_at: a.created_at
-    })),
-    ...(recentPayments || []).map(p => ({
-      id: p.id,
-      kind: 'pago' as const,
-      children: null,
-      profiles: p.profiles,
-      session_count: 0,
-      total_amount: p.amount,
-      payment_type: p.payment_type,
-      created_at: p.created_at
-    })),
-  ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  const sessionActivity: RecentActivity[] = (recentActivity || []).map((a): RecentActivity => ({
+    id: a.id as string,
+    kind: 'sesion',
+    children: a.children as any,
+    profiles: a.profiles as any,
+    session_count: a.session_count as number,
+    total_amount: a.total_amount as number,
+    created_at: a.created_at as string,
+  }))
+
+  const paymentActivity: RecentActivity[] = (recentPayments || []).map((p): RecentActivity => ({
+    id: p.id as string,
+    kind: 'pago',
+    children: null,
+    profiles: p.profiles as any,
+    session_count: 0,
+    total_amount: p.amount as number,
+    payment_type: p.payment_type as 'efectivo' | 'transferencia',
+    created_at: p.payment_date as string,
+  }))
+
+  const combinedRecent: RecentActivity[] = [...sessionActivity, ...paymentActivity]
 
   const stats = {
     totalProfessionals: totalProfessionals || 0,

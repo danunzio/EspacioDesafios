@@ -36,7 +36,6 @@ import {
 const EXPENSE_CATEGORIES = [
   'Alquiler',
   'Luz',
-  'Gas',
   'Aysa',
   'Agua',
   'Limpieza',
@@ -49,7 +48,6 @@ type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
 const categoryIcons: Record<string, typeof Zap> = {
   'Alquiler': Home,
   'Luz': Zap,
-  'Gas': Flame,
   'Aysa': Droplets,
   'Agua': Droplets,
   'Limpieza': Sparkles,
@@ -60,7 +58,6 @@ const categoryIcons: Record<string, typeof Zap> = {
 const categoryColors: Record<string, string> = {
   'Alquiler': '#A38EC3',
   'Luz': '#F9E79F',
-  'Gas': '#F4C2C2',
   'Aysa': '#A8E6CF',
   'Agua': '#AED6F1',
   'Limpieza': '#8ED9B8',
@@ -283,12 +280,12 @@ export default function AdminConsumosPage() {
 
       {/* Total Summary */}
       <Card className="bg-gradient-to-r from-red-50 to-orange-50 border-red-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center justify-center sm:justify-start gap-3 w-full">
             <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
               <TrendingDown className="text-red-600" size={24} />
             </div>
-            <div>
+            <div className="text-center sm:text-left">
               <p className="text-sm text-red-600 font-medium">Total Gastos</p>
               <p className="text-2xl font-bold text-red-700">
                 {formatCurrency(totalExpenses)}
@@ -301,7 +298,7 @@ export default function AdminConsumosPage() {
               </p>
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-center sm:text-right w-full">
             <p className="text-sm text-[#6B6570]">{filteredExpenses.length} registros</p>
           </div>
         </div>

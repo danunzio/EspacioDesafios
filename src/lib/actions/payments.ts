@@ -71,14 +71,10 @@ export async function createPaymentToClinic(
       .single();
 
     // Find admin users to notify
-    const { data: admins, error: adminsError } = await supabase
+    const { data: admins } = await supabase
       .from('profiles')
       .select('id')
       .eq('role', 'admin');
-
-    if (adminsError) {
-      console.error('Error fetching admins for notification:', adminsError);
-    }
 
     if (admins && admins.length > 0) {
       // Create notifications for all admins
@@ -89,7 +85,6 @@ export async function createPaymentToClinic(
         type: 'success' as const,
       }));
 
-      console.log(`Enviando ${notifications.length} notificaciones a los administradores...`);
       const { error: notifError } = await supabase
         .from('notifications')
         .insert(notifications);
@@ -98,8 +93,6 @@ export async function createPaymentToClinic(
         console.error('Error creating notifications:', notifError);
         // Don't throw here, payment was successful
       }
-    } else {
-      console.log('No se encontraron administradores para notificar.');
     }
 
     revalidatePath('/profesional/facturacion');
@@ -173,16 +166,17 @@ export async function getPaymentsToClinic(
 export async function getAllPaymentsToClinic(
   year?: number,
   month?: number
-): Promise<{ success: boolean; data?: PaymentToClinic[]; error?: string }> {
+): Promise<{
+  success: boolean;
+  data?: (PaymentToClinic & { professional?: { full_name: string; email: string } })[];
+  error?: string;
+}> {
   try {
     const supabase = await createClient();
 
     let query = supabase
       .from('payments_to_clinic')
-      .select(`
-        *,
-        professional:profiles!payments_to_clinic_professional_id_fkey(full_name, email)
-      `)
+      .select('*')
       .order('payment_date', { ascending: false });
 
     if (year !== undefined) {
@@ -199,9 +193,30 @@ export async function getAllPaymentsToClinic(
       throw new Error(`Error fetching payments: ${error.message}`);
     }
 
+    const payments = data || [];
+
+    const ids = Array.from(new Set(payments.map(p => p.professional_id).filter(Boolean)));
+    let profilesMap = new Map<string, { full_name: string; email: string }>();
+    if (ids.length > 0) {
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', ids);
+      if (!profilesError && profilesData) {
+        profilesMap = new Map(
+          profilesData.map(p => [p.id, { full_name: p.full_name as string, email: p.email as string }])
+        );
+      }
+    }
+
+    const enriched: (PaymentToClinic & { professional?: { full_name: string; email: string } })[] = payments.map(p => ({
+      ...p,
+      professional: profilesMap.get(p.professional_id) || undefined
+    }));
+
     return {
       success: true,
-      data: data || [],
+      data: enriched,
     };
   } catch (error) {
     console.error('Error fetching all payments to clinic:', error);
@@ -251,41 +266,28 @@ export async function reviewPaymentToClinic(
       throw new Error(`Error updating payment: ${updateError.message}`);
     }
 
-    // Notificar al profesional
     const { data: professional } = await supabase
       .from('profiles')
       .select('id, full_name')
       .eq('id', payment.professional_id)
       .single();
 
-    if (professional) {
-      const amountFormatted = new Intl.NumberFormat('es-CL', {
-        style: 'currency',
-        currency: 'CLP',
-      }).format(payment.amount);
-
-      const title = status === 'approved' ? '✅ Pago verificado' : '❌ Pago rechazado';
-      const message = status === 'approved'
-        ? `¡Hola ${professional.full_name.split(' ')[0]}! Tu pago de ${amountFormatted} ha sido verificado satisfactoriamente por administración.`
-        : `Lamentamos informarte que tu pago de ${amountFormatted} ha sido rechazado. Por favor, revisa los detalles o contacta a administración.`;
-
-      const { error: notifError } = await supabase
+    if (professional?.id) {
+      await supabase
         .from('notifications')
         .insert({
           user_id: professional.id,
-          title,
-          message,
+          title: status === 'approved' ? 'Pago verificado' : 'Pago rechazado',
+          message:
+            status === 'approved'
+              ? `Tu pago de ${payment.amount.toLocaleString('es-CL')} ha sido verificado por administración.`
+              : `Tu pago de ${payment.amount.toLocaleString('es-CL')} ha sido rechazado por administración.`,
           type: status === 'approved' ? 'success' : 'error',
         });
-
-      if (notifError) {
-        console.error('Error enviando notificación al profesional:', notifError);
-      }
     }
 
     revalidatePath('/admin/pagos');
     revalidatePath('/profesional/facturacion');
-    revalidatePath('/profesional/notificaciones');
     return { success: true };
   } catch (error) {
     console.error('Error reviewing payment to clinic:', error);

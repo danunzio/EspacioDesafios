@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation'
 import { StatsCard } from '@/components/admin/stats-card'
-import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import {
   Users,
@@ -25,7 +24,7 @@ interface ModuleValue {
   fee_value: number
 }
 
-interface RecentActivity {
+export interface RecentActivity {
   id: string
   kind?: 'sesion' | 'pago'
   session_count?: number
@@ -73,6 +72,7 @@ export function AdminDashboardClient({
           subtitle="Activos"
           icon={Users}
           color="purple"
+          onClick={() => router.push('/admin/profesionales')}
         />
         <StatsCard
           title="Pacientes Activos"
@@ -80,6 +80,7 @@ export function AdminDashboardClient({
           subtitle="En tratamiento"
           icon={Baby}
           color="pink"
+          onClick={() => router.push('/admin/ninos')}
         />
         <StatsCard
           title="Pagos por verificar"
@@ -109,10 +110,6 @@ export function AdminDashboardClient({
               Registra un nuevo gasto operativo
             </p>
           </div>
-          <Button variant="primary" size="sm" className="flex-shrink-0">
-            <Plus size={18} className="mr-2" />
-            Agregar
-          </Button>
         </div>
       </Card>
 
@@ -130,7 +127,12 @@ export function AdminDashboardClient({
             {recentActivity.map((activity) => (
               <div
                 key={activity.id}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-[#E8E5F0] last:border-0 gap-2"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 border-b border-[#E8E5F0] last:border-0 gap-2 cursor-pointer hover:bg-[#F8F7FF]"
+                onClick={() =>
+                  activity.kind === 'pago'
+                    ? router.push('/admin/pagos')
+                    : router.push('/admin/liquidaciones')
+                }
               >
                 <div className="flex-1">
                   {activity.kind === 'pago' ? (

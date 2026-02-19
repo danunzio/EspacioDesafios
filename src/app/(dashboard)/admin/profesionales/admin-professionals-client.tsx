@@ -115,7 +115,7 @@ export function AdminProfessionalsClient({ initialProfessionals }: AdminProfessi
         onClick={() => setIsModalOpen(true)}
         className="w-full"
       >
-        <Plus size={18} className="mr-2" />
+        
         Nuevo Profesional
       </Button>
 

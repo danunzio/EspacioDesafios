@@ -20,6 +20,7 @@ const professionalTabs = [
   { icon: Home, label: 'Inicio', href: '/profesional' },
   { icon: Baby, label: 'Pacientes', href: '/profesional/ninos' },
   { icon: Calendar, label: 'Sesiones', href: '/profesional/sesiones' },
+  { icon: Wallet, label: 'Mi Facturación', href: '/profesional/facturacion' },
 ];
 
 export function BottomNav({ userRole }: BottomNavProps) {

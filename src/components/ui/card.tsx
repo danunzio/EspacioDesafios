@@ -12,7 +12,6 @@ interface CardProps {
   className?: string
   variant?: 'default' | 'soft'
   onClick?: MouseEventHandler<HTMLDivElement>
-  role?: string
 }
 
 const variantStyles = {
@@ -25,7 +24,6 @@ export function Card({
   className = '',
   variant = 'default',
   onClick,
-  role,
 }: CardProps) {
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (onClick) {
@@ -44,8 +42,6 @@ export function Card({
     <div
       onClick={onClick ? handleClick : undefined}
       onKeyDown={onClick ? handleKeyDown : undefined}
-      role={role || (onClick ? 'button' : undefined)}
-      tabIndex={onClick ? 0 : undefined}
       className={cn(
         'rounded-2xl sm:rounded-3xl p-4 sm:p-6',
         variantStyles[variant],
