@@ -65,7 +65,7 @@ export function AdminDashboardClient({
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <StatsCard
           title="Total Profesionales"
           value={stats.totalProfessionals}
@@ -89,6 +89,8 @@ export function AdminDashboardClient({
           icon={Wallet}
           color="purple"
           onClick={() => router.push('/admin/pagos')}
+          className="col-span-2 sm:col-span-1"
+          centered
         />
       </div>
 
@@ -156,10 +158,12 @@ export function AdminDashboardClient({
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  <span className="text-sm font-medium text-[#A38EC3]">
-                    ${activity.total_amount?.toLocaleString('es-CL')}
-                  </span>
-                  <span className="text-[10px] text-[#9A94A0]">
+                  {typeof activity.total_amount === 'number' && (
+                    <span className="text-sm font-medium text-[#A38EC3]">
+                      ${activity.total_amount.toLocaleString('es-CL')}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-[#78716C]">
                     {new Date(activity.created_at).toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>

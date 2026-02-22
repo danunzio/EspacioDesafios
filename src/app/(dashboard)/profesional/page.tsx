@@ -12,6 +12,17 @@ import {
   ArrowRight,
 } from 'lucide-react'
 
+function getGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour >= 6 && hour < 12) {
+    return 'Buenos días'
+  } else if (hour >= 12 && hour < 20) {
+    return 'Buenas tardes'
+  } else {
+    return 'Buenas noches'
+  }
+}
+
 export default async function ProfessionalDashboardPage() {
   const supabase = await createClient()
 
@@ -85,7 +96,7 @@ export default async function ProfessionalDashboardPage() {
       {/* Header */}
       <div className="text-center sm:text-left">
         <h2 className="text-xl sm:text-2xl font-bold text-[#2D2A32]">
-          ¡Hola, {profile.full_name?.split(' ')[0]}!
+          {getGreeting()}, {profile.full_name?.split(' ')[0]}!
         </h2>
         <p className="text-sm text-[#6B6570] mt-1">
           Resumen de tu actividad este mes

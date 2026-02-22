@@ -80,21 +80,38 @@ export default async function AdminDashboardPage() {
     .order('payment_date', { ascending: false })
     .limit(5)
 
-  const sessionActivity: RecentActivity[] = (recentActivity || []).map((a): RecentActivity => ({
+interface SessionRow {
+  id: string;
+  children: { full_name: string } | null;
+  profiles: { full_name: string } | null;
+  session_count: number;
+  total_amount: number;
+  created_at: string;
+}
+
+interface PaymentRow {
+  id: string;
+  profiles: { full_name: string } | null;
+  amount: number;
+  payment_type: 'efectivo' | 'transferencia';
+  payment_date: string;
+}
+
+  const sessionActivity: RecentActivity[] = (recentActivity as SessionRow[] || []).map((a): RecentActivity => ({
     id: a.id as string,
     kind: 'sesion',
-    children: a.children as any,
-    profiles: a.profiles as any,
+    children: a.children,
+    profiles: a.profiles,
     session_count: a.session_count as number,
     total_amount: a.total_amount as number,
     created_at: a.created_at as string,
   }))
 
-  const paymentActivity: RecentActivity[] = (recentPayments || []).map((p): RecentActivity => ({
+  const paymentActivity: RecentActivity[] = (recentPayments as PaymentRow[] || []).map((p): RecentActivity => ({
     id: p.id as string,
     kind: 'pago',
     children: null,
-    profiles: p.profiles as any,
+    profiles: p.profiles,
     session_count: 0,
     total_amount: p.amount as number,
     payment_type: p.payment_type as 'efectivo' | 'transferencia',

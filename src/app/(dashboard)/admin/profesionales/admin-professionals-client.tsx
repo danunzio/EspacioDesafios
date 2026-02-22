@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useConfirm } from '@/components/ui/confirm-modal';
 import { AddProfessionalModal } from '@/components/modals/add-professional-modal';
 import { EditProfessionalModal } from '@/components/modals/edit-professional-modal';
 import {
@@ -47,6 +48,7 @@ interface AdminProfessionalsClientProps {
 
 export function AdminProfessionalsClient({ initialProfessionals }: AdminProfessionalsClientProps) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
@@ -63,8 +65,16 @@ export function AdminProfessionalsClient({ initialProfessionals }: AdminProfessi
     setIsEditModalOpen(true);
   };
 
-  const handleDelete = (professional: Professional) => {
-    if (confirm(`¿Estás seguro de eliminar a ${professional.full_name}?`)) {
+  const handleDelete = async (professional: Professional) => {
+    const confirmed = await confirm({
+      title: 'Eliminar profesional',
+      message: `¿Estás seguro de eliminar a ${professional.full_name}?`,
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+      icon: 'trash',
+    });
+    if (confirmed) {
       alert('Funcionalidad en desarrollo');
     }
   };
@@ -122,13 +132,13 @@ export function AdminProfessionalsClient({ initialProfessionals }: AdminProfessi
       {/* Búsqueda y Ordenamiento */}
       <div className="space-y-2">
         <Card variant="soft" className="flex items-center gap-3">
-          <Search className="text-[#9A94A0] flex-shrink-0" size={20} />
+          <Search className="text-[#78716C] flex-shrink-0" size={20} />
           <input
             type="text"
             placeholder="Buscar profesional..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1 bg-transparent outline-none text-[#2D2A32] placeholder:text-[#9A94A0]"
+            className="flex-1 bg-transparent outline-none text-[#2D2A32] placeholder:text-[#78716C]"
           />
         </Card>
 
@@ -214,13 +224,14 @@ export function AdminProfessionalsClient({ initialProfessionals }: AdminProfessi
                               }}
                               className="p-1 hover:bg-green-50 rounded-full transition-colors"
                               title="Enviar WhatsApp"
+                              aria-label="Enviar mensaje por WhatsApp"
                             >
                               <WhatsAppIcon size={16} />
                             </button>
                           </div>
                         )}
                         {professional.specialty && (
-                          <p className="text-xs text-[#9A94A0] mt-1">
+                          <p className="text-xs text-[#78716C] mt-1">
                             {professional.specialty}
                           </p>
                         )}
@@ -236,7 +247,7 @@ export function AdminProfessionalsClient({ initialProfessionals }: AdminProfessi
         </div>
       ) : (
         <Card className="text-center py-12">
-          <Users className="mx-auto mb-4 text-[#9A94A0]" size={48} />
+          <Users className="mx-auto mb-4 text-[#78716C]" size={48} />
           <h3 className="text-lg font-semibold text-[#2D2A32] mb-2">
             No hay profesionales
           </h3>

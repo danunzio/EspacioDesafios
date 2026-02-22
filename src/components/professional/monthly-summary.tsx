@@ -86,7 +86,7 @@ export function MonthlySummary({
       {childrenCount > 0 && (
         <div className="mt-6 pt-4 border-t border-[#E8E5F0]">
           <div className="flex items-center gap-2 mb-3">
-            <Users className="text-[#9A94A0]" size={16} />
+            <Users className="text-[#78716C]" size={16} />
             <span className="text-sm font-medium text-[#6B6570]">
               Promedio por Paciente
             </span>

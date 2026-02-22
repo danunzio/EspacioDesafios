@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SkeletonStatistics, SkeletonChart, SkeletonPieChart, SkeletonStatCard, SkeletonList } from '@/components/ui/skeleton';
 import {
   TrendingUp,
   DollarSign,
@@ -144,6 +145,7 @@ export default function EstadisticasPage() {
   }, [selectedYear, selectedMonth]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadStatistics();
   }, [loadStatistics]);
 
@@ -185,10 +187,6 @@ export default function EstadisticasPage() {
           >
             <RefreshCw size={18} className={`mr-2 ${loading ? 'animate-spin' : ''}`} />
             Actualizar
-          </Button>
-          <Button variant="outline" className="w-full sm:w-auto">
-            <Download size={18} className="mr-2" />
-            Exportar
           </Button>
         </div>
       </div>
@@ -303,10 +301,7 @@ export default function EstadisticasPage() {
         </div>
         <div className="h-80">
           {loading ? (
-            <div className="flex items-center justify-center h-full text-[#6B6570]">
-              <RefreshCw size={24} className="animate-spin mr-2" />
-              Cargando datos financieros...
-            </div>
+            <SkeletonChart height="h-80" />
           ) : financialData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={financialData}>
@@ -314,7 +309,7 @@ export default function EstadisticasPage() {
                 <XAxis dataKey="month" stroke="#6B6570" />
                 <YAxis stroke="#6B6570" tickFormatter={(value) => `$${value / 1000}k`} />
                 <Tooltip
-                  formatter={(value: any) => formatCurrency(Number(value) || 0)}
+                  formatter={(value) => formatCurrency(Number(value) || 0)}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 />
                 <Legend />
@@ -341,10 +336,7 @@ export default function EstadisticasPage() {
           </div>
           <div className="h-64">
             {loading ? (
-              <div className="flex items-center justify-center h-full text-[#6B6570]">
-                <RefreshCw size={24} className="animate-spin mr-2" />
-                Cargando...
-              </div>
+              <SkeletonPieChart />
             ) : valueTypesData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -361,7 +353,7 @@ export default function EstadisticasPage() {
                       <Cell key={`cell-${entry.name}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: any) => formatCurrency(Number(value) || 0)} />
+                  <Tooltip formatter={(value) => formatCurrency(Number(value) || 0)} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -383,10 +375,7 @@ export default function EstadisticasPage() {
           </div>
           <div className="h-64">
             {loading ? (
-              <div className="flex items-center justify-center h-full text-[#6B6570]">
-                <RefreshCw size={24} className="animate-spin mr-2" />
-                Cargando...
-              </div>
+              <SkeletonPieChart />
             ) : paymentStatusData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -403,7 +392,7 @@ export default function EstadisticasPage() {
                       <Cell key={`cell-${entry.name}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: any) => `${value || 0} pagos`} />
+                  <Tooltip formatter={(value) => `${Number(value) || 0} pagos`} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -429,10 +418,7 @@ export default function EstadisticasPage() {
         </div>
         <div className="max-h-80 overflow-y-auto pr-2 custom-scrollbar">
           {loading ? (
-            <div className="flex items-center justify-center py-10 text-[#6B6570]">
-              <RefreshCw size={24} className="animate-spin mr-2" />
-              Cargando...
-            </div>
+            <SkeletonList count={3} />
           ) : unpaidProfessionalsData.length > 0 ? (
             <div className="space-y-3">
               {unpaidProfessionalsData.map((prof) => (

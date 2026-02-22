@@ -359,7 +359,7 @@ export async function deleteProfessional(
     const directChildren = directResult.data || [];
     const relationChildIds = relationResult.data?.map(r => r.child_id) || [];
     
-    let relationChildren: any[] = [];
+    let relationChildren: { id: string }[] = [];
     if (relationChildIds.length > 0) {
       const relationResult2 = await supabase
         .from('children')

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useConfirm } from '@/components/ui/confirm-modal';
 import { 
   Settings, 
   LogOut, 
@@ -24,6 +25,7 @@ interface ConfiguracionProfesionalClientProps {
 
 export default function ConfiguracionProfesionalPage() {
   const router = useRouter();
+  const confirm = useConfirm();
   const supabase = createClient();
   const [profile, setProfile] = useState<ConfiguracionProfesionalClientProps['profile'] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,9 +55,15 @@ export default function ConfiguracionProfesionalPage() {
   }, [supabase, router]);
 
   const handleLogout = async () => {
-    if (!confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Cerrar sesión',
+      message: '¿Estás seguro de que deseas cerrar sesión?',
+      confirmText: 'Cerrar sesión',
+      cancelText: 'Cancelar',
+      variant: 'warning',
+      icon: 'logout',
+    });
+    if (!confirmed) return;
 
     setLoggingOut(true);
     try {
@@ -179,7 +187,7 @@ export default function ConfiguracionProfesionalPage() {
       </Card>
 
       {/* App Info Footer */}
-      <div className="text-center text-xs text-[#9A94A0] pt-4">
+      <div className="text-center text-xs text-[#78716C] pt-4">
         <p>Espacio Desafíos v1.0.0</p>
         <p className="mt-1">© 2026 Todos los derechos reservados</p>
       </div>

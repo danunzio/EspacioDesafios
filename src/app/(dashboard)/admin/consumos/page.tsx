@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { SkeletonTable } from '@/components/ui/skeleton';
+import { useConfirm } from '@/components/ui/confirm-modal';
 import {
   Zap,
   Droplets,
@@ -62,10 +64,11 @@ const categoryColors: Record<string, string> = {
   'Agua': '#AED6F1',
   'Limpieza': '#8ED9B8',
   'Imp Municipal': '#D4B850',
-  'Otros': '#9A94A0',
+  'Otros': '#78716C',
 };
 
 export default function AdminConsumosPage() {
+  const confirm = useConfirm();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
@@ -97,6 +100,7 @@ export default function AdminConsumosPage() {
   }, [selectedYear, selectedMonth]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadExpenses();
   }, [loadExpenses]);
 
@@ -184,9 +188,16 @@ export default function AdminConsumosPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este gasto?')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Eliminar gasto',
+      message: '¿Estás seguro de que deseas eliminar este gasto? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+      icon: 'trash',
+    });
+
+    if (!confirmed) return;
 
     setLoading(true);
     const result = await deleteExpense(id);
@@ -390,7 +401,7 @@ export default function AdminConsumosPage() {
                   Monto ($)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A94A0]">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#78716C]">
                     $
                   </span>
                   <input
@@ -476,7 +487,7 @@ export default function AdminConsumosPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {Object.entries(expensesByCategory).map(([category, amount]) => {
               const Icon = getCategoryIcon(category);
-              const color = categoryColors[category] || '#9A94A0';
+              const color = categoryColors[category] || '#78716C';
               return (
                 <div
                   key={category}
@@ -539,17 +550,14 @@ export default function AdminConsumosPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-[#6B6570]">
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="animate-spin">⏳</span>
-                      Cargando...
-                    </span>
+                  <td colSpan={5} className="py-4">
+                    <SkeletonTable rows={4} cols={5} />
                   </td>
                 </tr>
               ) : filteredExpenses.length > 0 ? (
                 filteredExpenses.map((expense) => {
                   const Icon = getCategoryIcon(expense.category);
-                  const color = categoryColors[expense.category] || '#9A94A0';
+                  const color = categoryColors[expense.category] || '#78716C';
 
                   return (
                     <tr
@@ -598,6 +606,7 @@ export default function AdminConsumosPage() {
                             onClick={() => handleEdit(expense)}
                             className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
                             title="Editar"
+                            aria-label="Editar gasto"
                           >
                             <Pencil size={16} />
                           </button>
@@ -605,6 +614,7 @@ export default function AdminConsumosPage() {
                             onClick={() => handleDelete(expense.id)}
                             className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
                             title="Eliminar"
+                            aria-label="Eliminar gasto"
                           >
                             <Trash2 size={16} />
                           </button>

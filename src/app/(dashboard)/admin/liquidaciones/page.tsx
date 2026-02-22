@@ -66,6 +66,7 @@ export default function AdminLiquidationsPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadProfessionals();
   }, [loadProfessionals]);
 
@@ -120,7 +121,7 @@ export default function AdminLiquidationsPage() {
 
       const payResult = await getAllPaymentsToClinic(year, month);
       if (payResult.success && payResult.data) {
-        setPayments(payResult.data as any);
+        setPayments(payResult.data as PaymentToClinic[]);
       }
 
       setCalculations(results);
@@ -365,10 +366,6 @@ export default function AdminLiquidationsPage() {
             <h3 className="text-lg font-semibold text-[#2D2A32]">
               Resultados de Liquidación - {MONTH_NAMES[month - 1]} {year}
             </h3>
-            <Button variant="outline" size="sm">
-              <Download size={16} className="mr-1" />
-              Exportar
-            </Button>
           </div>
 
           <div className="overflow-x-auto">
@@ -452,6 +449,7 @@ export default function AdminLiquidationsPage() {
                                   disabled={loading}
                                   className="p-2 hover:bg-green-50 text-green-600 rounded-lg transition-colors"
                                   title="Aprobar"
+                                  aria-label="Aprobar liquidación"
                                 >
                                   <CheckCircle size={16} />
                                 </button>
@@ -463,6 +461,7 @@ export default function AdminLiquidationsPage() {
                                 disabled={loading}
                                 className="p-2 hover:bg-green-50 text-green-600 rounded-lg transition-colors"
                                 title="Marcar como pagado"
+                                aria-label="Marcar liquidación como pagada"
                               >
                                 <DollarSign size={16} />
                               </button>
@@ -522,7 +521,7 @@ export default function AdminLiquidationsPage() {
                                           <p className="text-xs text-[#6B6570]">
                                             {new Date(p.payment_date).toLocaleDateString('es-CL')} • {p.payment_type === 'efectivo' ? 'Efectivo' : 'Transferencia'}
                                           </p>
-                                          {p.notes && <p className="text-xs text-[#9A94A0] mt-1">{p.notes}</p>}
+                                          {p.notes && <p className="text-xs text-[#78716C] mt-1">{p.notes}</p>}
                                         </div>
                                         <Badge variant={
                                           p.verification_status === 'approved'
@@ -564,7 +563,7 @@ export default function AdminLiquidationsPage() {
       {/* No Data */}
       {isCalculated && calculations.length === 0 && (
         <Card className="text-center py-12">
-          <Calendar className="mx-auto mb-4 text-[#9A94A0]" size={48} />
+          <Calendar className="mx-auto mb-4 text-[#78716C]" size={48} />
           <h3 className="text-lg font-semibold text-[#2D2A32] mb-2">
             No hay datos para liquidar
           </h3>
@@ -581,9 +580,8 @@ export default function AdminLiquidationsPage() {
         </h4>
         <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
           <li>Selecciona el año, mes y profesional (o todos)</li>
-          <li>Haz clic en "Calcular Liquidación" para procesar</li>
+          <li>Haz clic en &quot;Calcular Liquidación&quot; para procesar</li>
           <li>El sistema calcula automáticamente basándose en las sesiones confirmadas</li>
-          <li>Aprueba las liquidaciones antes de pagarlas</li>
           <li>Marca como pagadas una vez realizado el pago</li>
         </ul>
       </Card>

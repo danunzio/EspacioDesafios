@@ -4,8 +4,10 @@ import { useState, useEffect, FormEvent } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { AccordionSection } from '@/components/ui/accordion-section'
+import { ProgressIndicator } from '@/components/ui/progress-indicator'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, CheckCircle, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { Loader2, CheckCircle, AlertCircle, User, Mail, Lock } from 'lucide-react'
 
 interface AddProfessionalModalProps {
   isOpen: boolean
@@ -43,12 +45,20 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
   const [success, setSuccess] = useState(false)
-  const [showPassword] = useState(true)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
   const supabase = createClient()
 
-  // Reset form when modal closes
+  const steps = [
+    { id: 'personal', label: 'Personal', completed: !!formData.full_name.trim() && !!formData.specialty.trim() },
+    { id: 'contact', label: 'Contacto', completed: !!formData.email.trim() },
+    { id: 'access', label: 'Acceso', completed: !!formData.password && formData.password.length >= 6 },
+  ]
+
+  const currentStep = !formData.full_name.trim() || !formData.specialty.trim() ? 'personal'
+    : !formData.email.trim() ? 'contact'
+    : 'access'
+
   useEffect(() => {
     if (!isOpen) {
       setFormData(initialFormData)
@@ -85,7 +95,6 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
       newErrors.phone = 'Ingrese un teléfono válido'
     }
 
-    // Check if email already exists
     if (formData.email && !newErrors.email) {
       try {
         const { data } = await supabase
@@ -116,7 +125,6 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
     setErrors({})
 
     try {
-      // Step 1: Create user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email.toLowerCase().trim(),
         password: formData.password,
@@ -139,7 +147,6 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
         throw new Error('No se pudo crear el usuario')
       }
 
-      // Step 2: Create profile in profiles table
       const { error: profileError } = await supabase.from('profiles').insert({
         id: authData.user.id,
         email: formData.email.toLowerCase().trim(),
@@ -151,7 +158,6 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
       })
 
       if (profileError) {
-        // Try to clean up the auth user if profile creation fails
         console.error('Profile creation error:', profileError)
         throw new Error('Error al crear el perfil del profesional')
       }
@@ -175,7 +181,6 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
 
   const handleChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }))
     }
@@ -201,7 +206,9 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
             <p className="text-[#6B6570] mt-2">Redirigiendo...</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <ProgressIndicator steps={steps} currentStep={currentStep} className="mb-4" />
+
             {errors.general && (
               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
                 <AlertCircle size={16} />
@@ -209,54 +216,74 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
               </div>
             )}
 
-            <Input
-              label="Nombre completo"
-              value={formData.full_name}
-              onChange={(e) => handleChange('full_name', e.target.value)}
-              placeholder="Ej: Dr. María González"
+            <AccordionSection
+              title="Información Personal"
+              icon={<User size={12} />}
+              defaultOpen={true}
+              completed={!!formData.full_name.trim() && !!formData.specialty.trim()}
               required
-              error={errors.full_name}
-            />
+            >
+              <div className="space-y-2">
+                <Input
+                  label="Nombre completo"
+                  value={formData.full_name}
+                  onChange={(e) => handleChange('full_name', e.target.value)}
+                  placeholder="Ej: Dr. María González"
+                  required
+                  error={errors.full_name}
+                />
 
-            <Input
-              label="Especialidad"
-              value={formData.specialty}
-              onChange={(e) => handleChange('specialty', e.target.value)}
-              placeholder="Ej: Psicología, Fonoaudiología, etc."
+                <Input
+                  label="Especialidad"
+                  value={formData.specialty}
+                  onChange={(e) => handleChange('specialty', e.target.value)}
+                  placeholder="Ej: Psicología, Fonoaudiología, etc."
+                  required
+                  error={errors.specialty}
+                />
+
+                <Input
+                  label="Teléfono"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => handleChange('phone', e.target.value)}
+                  placeholder="Ej: +56 9 1234 5678"
+                  error={errors.phone}
+                />
+              </div>
+            </AccordionSection>
+
+            <AccordionSection
+              title="Datos de Acceso"
+              icon={<Lock size={12} />}
+              defaultOpen={false}
+              completed={!!formData.email.trim() && !!formData.password && formData.password.length >= 6}
               required
-              error={errors.specialty}
-            />
+            >
+              <div className="space-y-2">
+                <Input
+                  label="Correo electrónico"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  placeholder="Ej: profesional@espaciodesafios.cl"
+                  required
+                  error={errors.email}
+                />
 
-            <Input
-              label="Correo electrónico"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleChange('email', e.target.value)}
-              placeholder="Ej: profesional@espaciodesafios.cl"
-              required
-              error={errors.email}
-            />
+                <Input
+                  label="Contraseña"
+                  type="text"
+                  value={formData.password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  required
+                  error={errors.password}
+                />
+              </div>
+            </AccordionSection>
 
-            <Input
-              label="Teléfono"
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => handleChange('phone', e.target.value)}
-              placeholder="Ej: +56 9 1234 5678"
-              error={errors.phone}
-            />
-
-            <Input
-              label="Contraseña"
-              type="text"
-              value={formData.password}
-              onChange={(e) => handleChange('password', e.target.value)}
-              placeholder="Mínimo 6 caracteres"
-              required
-              error={errors.password}
-            />
-
-            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-6">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
               <Button
                 type="button"
                 variant="outline"
@@ -286,7 +313,6 @@ export function AddProfessionalModal({ isOpen, onClose, onSuccess }: AddProfessi
         )}
       </Modal>
 
-      {/* Toast Notification */}
       {toast && (
         <div
           className={`

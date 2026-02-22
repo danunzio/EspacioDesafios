@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { SkeletonSessions } from '@/components/ui/skeleton';
 import {
   Calendar,
   Save,
   Calculator,
-  TrendingUp,
   DollarSign,
   Users,
   AlertCircle,
@@ -45,6 +45,8 @@ interface SessionData {
 interface ModuleValue {
   module_name: string;
   base_value: number;
+  year?: number;
+  month?: number;
 }
 
 interface ChildModule {
@@ -58,14 +60,15 @@ interface ProfessionalModuleConfig {
 }
 
 export default function ProfessionalSessionsPage() {
-  const supabase = createClient();
-  const { user, profile, loading: authLoading } = useAuth();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
+  const { user, loading: authLoading } = useAuth();
   const [year, setYear] = useState(() => new Date().getFullYear());
   const [month, setMonth] = useState(() => new Date().getMonth() + 1);
   const [sessions, setSessions] = useState<SessionData[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [children, setChildren] = useState<Child[]>([]);
   const [moduleValues, setModuleValues] = useState<ModuleValue[]>([]);
 
@@ -78,35 +81,42 @@ export default function ProfessionalSessionsPage() {
     let isMounted = true;
 
     async function fetchData() {
-      if (authLoading || !user || !profile) {
+      if (authLoading || !user) {
         return;
       }
 
       try {
         setLoading(true);
 
-        // Get children with explicit modular assignments
-        const childrenFromRelation = await supabase
-          .from('children_professionals')
-          .select('child_id, module_name')
-          .eq('professional_id', user.id);
+        // Run all independent queries in parallel
+        const [childrenFromRelation, professionalModulesResponse, moduleValuesResponse] = await Promise.all([
+          supabase
+            .from('children_professionals')
+            .select('child_id, module_name')
+            .eq('professional_id', user.id),
+          supabase
+            .from('professional_modules')
+            .select('value_type, commission_percentage')
+            .eq('professional_id', user.id)
+            .eq('is_active', true),
+          supabase
+            .from('value_history')
+            .select('value_type, value')
+            .eq('year', year)
+            .eq('month', month),
+        ]);
 
         if (!isMounted) return;
-        if (childrenFromRelation.error) {
-          throw childrenFromRelation.error;
-        }
+        if (childrenFromRelation.error) throw childrenFromRelation.error;
+        if (professionalModulesResponse.error) throw professionalModulesResponse.error;
+        if (moduleValuesResponse.error) throw moduleValuesResponse.error;
 
-        // Get professional's active module configurations (commission percentages)
-        const professionalModulesResponse = await supabase
-          .from('professional_modules')
-          .select('value_type, commission_percentage')
-          .eq('professional_id', user.id)
-          .eq('is_active', true);
-
-        if (!isMounted) return;
-        if (professionalModulesResponse.error) {
-          throw professionalModulesResponse.error;
-        }
+        // Map module values
+        const mappedValues: ModuleValue[] = (moduleValuesResponse.data || []).map(v => ({
+          module_name: v.value_type,
+          base_value: parseFloat(v.value.toString()),
+        }));
+        setModuleValues(mappedValues);
 
         const professionalModulesMap = new Map<string, number>();
         for (const mod of (professionalModulesResponse.data || [])) {
@@ -134,17 +144,26 @@ export default function ProfessionalSessionsPage() {
           return;
         }
 
-        // Fetch details for the assigned children
-        const childrenResponse = await supabase
-          .from('children')
-          .select('id, full_name')
-          .in('id', assignedChildIds)
-          .eq('is_active', true);
+        const currentMonth = month;
+        const currentYear = year;
+        const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+        const previousYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+
+        // Fetch children details and sessions in parallel
+        const [childrenResponse, currentSessionsRes, previousSessionsRes] = await Promise.all([
+          supabase
+            .from('children')
+            .select('id, full_name')
+            .in('id', assignedChildIds)
+            .eq('is_active', true),
+          supabase.from('monthly_sessions').select('child_id, module_name, session_count')
+            .eq('professional_id', user.id).eq('year', currentYear).eq('month', currentMonth),
+          supabase.from('monthly_sessions').select('child_id, module_name, session_count')
+            .eq('professional_id', user.id).eq('year', previousYear).eq('month', previousMonth),
+        ]);
 
         if (!isMounted) return;
-        if (childrenResponse.error) {
-          throw childrenResponse.error;
-        }
+        if (childrenResponse.error) throw childrenResponse.error;
 
         const childrenData = (childrenResponse.data || []).map(child => ({
           ...child,
@@ -152,27 +171,6 @@ export default function ProfessionalSessionsPage() {
         }));
 
         setChildren(childrenData);
-
-
-        const moduleValuesResponse = await supabase
-          .from('module_values')
-          .select('module_name, base_value')
-          .eq('is_active', true);
-
-        if (moduleValuesResponse.error) throw moduleValuesResponse.error;
-        setModuleValues(moduleValuesResponse.data || []);
-
-        const currentMonth = month;
-        const currentYear = year;
-        const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-        const previousYear = currentMonth === 1 ? currentYear - 1 : currentYear;
-
-        const [currentSessionsRes, previousSessionsRes] = await Promise.all([
-          supabase.from('monthly_sessions').select('child_id, module_name, session_count')
-            .eq('professional_id', user.id).eq('year', currentYear).eq('month', currentMonth),
-          supabase.from('monthly_sessions').select('child_id, module_name, session_count')
-            .eq('professional_id', user.id).eq('year', previousYear).eq('month', previousMonth)
-        ]);
 
         const currentSessionsMap: Record<string, number> = {};
         (currentSessionsRes.data || []).forEach(s => currentSessionsMap[`${s.child_id}-${s.module_name}`] = s.session_count);
@@ -221,7 +219,7 @@ export default function ProfessionalSessionsPage() {
     return () => {
       isMounted = false;
     };
-  }, [user, profile, authLoading, year, month, supabase]);
+  }, [user, authLoading, year, month]);
 
   const handleSessionChange = (childId: string, moduleType: string, count: number) => {
     setSessions((prev) =>
@@ -289,8 +287,8 @@ export default function ProfessionalSessionsPage() {
   };
 
   const getModuleValue = (moduleName: string) => {
-    const module = moduleValues.find((m) => m.module_name === moduleName);
-    return module?.base_value || 0;
+    const mod = moduleValues.find((m) => m.module_name === moduleName);
+    return mod?.base_value || 0;
   };
 
   const totalSessions = sessions.reduce((acc, s) => acc + s.session_count, 0);
@@ -301,16 +299,12 @@ export default function ProfessionalSessionsPage() {
     const moduleValue = getModuleValue(s.module_type);
     return acc + (s.session_count * moduleValue * (s.commission_percentage / 100));
   }, 0);
-  const netAmount = estimatedBilling - totalCommission;
+
 
   const hasChanges = sessions.some((s) => s.session_count > 0);
 
   if (authLoading || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="animate-spin text-[#A38EC3]" size={32} />
-      </div>
-    );
+    return <SkeletonSessions />;
   }
 
   return (
@@ -444,22 +438,6 @@ export default function ProfessionalSessionsPage() {
 
             <div className="bg-white/50 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="text-[#A38EC3]" size={16} />
-                <span className="text-sm font-medium text-[#6B6570]">
-                  Valor Módulo Promedio
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-[#2D2A32]">
-                {formatCurrency(
-                  moduleValues.length > 0
-                    ? moduleValues.reduce((acc, m) => acc + m.base_value, 0) / moduleValues.length
-                    : 0
-                )}
-              </p>
-            </div>
-
-            <div className="bg-white/50 rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-2">
                 <DollarSign className="text-[#A8E6CF]" size={16} />
                 <span className="text-sm font-medium text-[#6B6570]">
                   Facturación Total
@@ -470,30 +448,18 @@ export default function ProfessionalSessionsPage() {
               </p>
             </div>
 
-            <div className="bg-white/50 rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="text-[#8ED9B8]" size={16} />
-                <span className="text-sm font-medium text-[#6B6570]">
-                  Tu Pago (75%)
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-[#2D2A32]">
-                {formatCurrency(netAmount)}
-              </p>
-            </div>
-
-            <div className="bg-white/50 rounded-2xl p-4">
+            <div className="col-span-2 lg:col-span-1 bg-white/50 rounded-2xl p-4 flex flex-col items-center justify-center">
               <div className="flex items-center gap-2 mb-2">
                 <DollarSign className="text-[#F4C2C2]" size={16} />
-                <span className="text-sm font-medium text-[#6B6570]">
+                <span className="text-sm font-medium text-[#6B6570] text-center">
                   Espacio Desafíos
                 </span>
               </div>
-              <p className="text-2xl font-bold text-[#2D2A32]">
+              <p className="text-2xl font-bold text-[#E8A5A5] text-center">
                 {formatCurrency(totalCommission)}
               </p>
-              <p className="text-xs text-[#6B6570]">
-                Retención clínica
+              <p className="text-xs text-[#6B6570] text-center mt-1">
+                Comisión a abonar
               </p>
             </div>
           </div>

@@ -2,8 +2,144 @@
 
 Todos los cambios notables de este proyecto serán documentados en este archivo.
 
-El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/ES/1.0.0/),
+El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
+
+---
+
+## [1.1.4] - 2026-02-21
+
+### ✨ Agregado
+
+#### 🎯 UX - Formularios Extensos
+- **Componente `AccordionSection`** - Secciones colapsables con animación suave
+- **Componente `ProgressIndicator`** - Indicador visual de progreso en formularios
+- **Formularios reorganizados** con secciones colapsables:
+  - Agregar/Editar Paciente: Paciente → Responsable → Asignación
+  - Agregar Profesional: Personal → Acceso
+- Indicador de completado (✓) en cada sección
+- Soporte para campos requeridos con indicador visual
+
+#### 🔐 UX - Confirmaciones de Acciones Críticas
+- **Componente `ConfirmModal`** con `useConfirm` hook
+- Modal de confirmación personalizado con:
+  - Título y mensaje descriptivo
+  - Iconos contextuales (trash, logout, warning)
+  - Variantes de color (danger, warning, info)
+  - Botones de confirmar/cancelar claros
+- Reemplazados 10 usos de `confirm()` nativo:
+  - Eliminar gasto, valor, paciente, profesional, módulo, obra social
+  - Desactivar profesional
+  - Cerrar sesión (admin y profesional)
+
+#### ⏳ UX - Feedback de Carga (Skeletons)
+- **Componentes Skeleton expandidos**:
+  - `SkeletonStatCard` - Tarjetas de estadísticas
+  - `SkeletonDashboard` - Dashboard completo
+  - `SkeletonProfessionalList` - Lista de profesionales
+  - `SkeletonChildrenList` - Lista de pacientes
+  - `SkeletonChart` / `SkeletonPieChart` - Gráficos
+  - `SkeletonStatistics` - Página estadísticas completa
+  - `SkeletonSessions` - Página de sesiones
+  - `SkeletonPayments` - Página de pagos
+  - `SkeletonValues` - Página de valores
+  - `SkeletonExpenses` - Página de consumos
+- Reemplazados textos "Cargando..." por skeletons en:
+  - `/profesional/sesiones`
+  - `/profesional/ninos`
+  - `/profesional/facturacion`
+  - `/admin/estadisticas`
+  - `/admin/valores`
+  - `/admin/consumos`
+  - `/admin/pagos`
+
+#### ♿ Accesibilidad
+- **aria-label** agregado a todos los botones con solo iconos:
+  - Editar, eliminar, activar/desactivar módulos
+  - Enviar WhatsApp
+  - Marcar notificación como leída
+  - Aprobar/rechazar liquidaciones
+  - Guardar/cancelar edición
+- **Mejora de contraste**: Color `#9A94A0` (ratio 3:1) → `#78716C` (ratio 4.6:1)
+  - 49 instancias actualizadas en textos secundarios
+  - Cumple WCAG AA para accesibilidad
+
+#### 👋 Saludo Dinámico
+- **Saludo basado en hora del día** en `/profesional`:
+  - 06:00 - 12:00: "Buenos días"
+  - 12:00 - 20:00: "Buenas tardes"
+  - 20:00 - 06:00: "Buenas noches"
+
+### 🛠 Corregido
+
+#### Cálculo de Comisiones
+- **Corregido cálculo de comisión por módulo** en `/profesional/facturacion`:
+  - Cada módulo ahora muestra su propio porcentaje de comisión
+  - Agregado `commissionPercentage` y `professionalAmount` al `ModuleBreakdown`
+  - La card "Comisión Total a abonar a Espacio Desafíos" ahora muestra el valor correcto
+
+#### Accesibilidad (a11y) - Labels y Controles
+- **Labels asociados a controles** - Agregado `htmlFor` e `id` a todos los labels de formularios:
+  - `edit-child-modal.tsx`: Labels de obra social y selección de profesionales
+  - `add-child-modal.tsx`: Labels de obra social y selección de profesionales
+  - `facturacion/page.tsx`: Labels de fecha, tipo de pago, importe y notas
+  - `valores/page.tsx`: Labels de año, mes y valor
+  - `sesiones/page.tsx`: Labels de año y mes
+- **Elementos clickeables accesibles** - Agregado `role="button"`, `tabIndex` y manejadores de teclado:
+  - `modal.tsx`: Backdrop del modal ahora manejable con teclado (Escape/Enter/Space)
+  - `card.tsx`: Cards clickeables ahora accesibles por teclado
+  - `configuracion-client.tsx`: Items de configuración navegables
+  - `professional-detail-client.tsx`: Pacientes asignados navegables
+  - `admin-professionals-client.tsx`: Tarjetas de profesionales navegables
+- **autoFocus eliminado** - Removido atributo `autoFocus` que causa problemas de usabilidad:
+  - `valores/page.tsx`: Input de valor
+  - `professional-detail-client.tsx`: Input de porcentaje de comisión
+
+#### Rendimiento (Performance)
+- **Inicialización lazy de estado** - Cambiado `useState(valor)` a `useState(() => valor)`:
+  - `facturacion/page.tsx`: selectedYear y selectedMonth
+  - `session-row.tsx`: localValue
+  - `estadisticas/page.tsx`: selectedYear
+  - `valores/page.tsx`: year y month
+  - `sesiones/page.tsx`: year y month
+- **Actualizaciones funcionales de setState** - Usado `prev => prev + 1` para evitar closures obsoletos:
+  - `facturacion/page.tsx`: handlePrevMonth y handleNextMonth
+- **Dynamic imports** - Implementado `next/dynamic` para recharts en `estadisticas/page.tsx`:
+  - Reduce significativamente el bundle inicial
+  - Carga diferida de componentes pesados de gráficos
+
+#### Corrección de Código
+- **Array index como key** - Reemplazado uso de `index` por identificadores estables:
+  - `facturacion/page.tsx`: Module breakdown usa `${moduleName}-${sessionCount}`
+  - `estadisticas/page.tsx`: Cell components usan `entry.name`
+  - `admin-children-client.tsx`: Professional names usan `name` como key
+- **Next.js Link** - Reemplazado `<a href>` por `<Link>` para navegación interna:
+  - `notificaciones/page.tsx`: Link a /admin/pagos
+  - `debug/page.tsx`: Link a /login
+
+### 💄 Mejorado
+
+#### UI Mobile
+- **Botones en `/admin/pagos`**: En mobile, los botones "Aprobar" y "Rechazar" ahora se muestran apilados verticalmente
+- **Opción eliminada**: "Liquidaciones" removida del menú de `/admin/mas`
+- **Contraseña visible por defecto** en detalles de profesional
+
+#### Lint y TypeScript
+- 15 errores de tipo `any` corregidos
+- 8 errores de `setState` en `useEffect` corregidos
+- 2 errores de entidades no escapadas corregidos
+- 1 error de prop `children` corregido
+- 1 error de variable `module` corregido
+- **40+ advertencias de accesibilidad y rendimiento corregidas**:
+  - 8 labels sin asociación a controles
+  - 5 elementos clickeables sin eventos de teclado
+  - 5 inicializaciones de estado no lazy
+  - 4 actualizaciones setState no funcionales
+  - 4 usos de array index como key
+  - 2 usos de `<a>` en lugar de `<Link>`
+  - 1 import de librería pesada sin dynamic import
+  - 2 usos de autoFocus
+- **Resultado final**: 0 errores, ~15 warnings (principalmente sugerencias de useReducer y componentes grandes)
 
 ---
 

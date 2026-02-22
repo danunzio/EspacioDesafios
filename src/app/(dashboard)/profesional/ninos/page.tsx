@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { SkeletonChildrenList } from '@/components/ui/skeleton';
 import { createClient } from '@/lib/supabase/client';
 import {
   Baby,
@@ -211,8 +212,12 @@ export default function ProfessionalChildrenPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-[#6B6570]">Cargando pacientes...</p>
+      <div className="space-y-4 sm:space-y-6 animate-fade-in">
+        <div className="text-center sm:text-left">
+          <div className="h-7 w-40 bg-gray-200 rounded animate-pulse" />
+          <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mt-2" />
+        </div>
+        <SkeletonChildrenList count={5} />
       </div>
     );
   }
@@ -239,7 +244,7 @@ export default function ProfessionalChildrenPage() {
       <Card variant="soft" className="space-y-3">
         <div className="relative">
           <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A94A0]"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[#78716C]"
             size={20}
           />
           <input
@@ -327,6 +332,7 @@ export default function ProfessionalChildrenPage() {
                             }}
                             className="p-1 hover:bg-green-50 rounded-full transition-colors"
                             title="Enviar WhatsApp"
+                            aria-label="Enviar mensaje por WhatsApp"
                           >
                             <WhatsAppIcon size={16} />
                           </button>
@@ -351,7 +357,7 @@ export default function ProfessionalChildrenPage() {
         </div>
       ) : (
         <Card className="text-center py-12">
-          <Baby className="mx-auto mb-4 text-[#9A94A0]" size={48} />
+          <Baby className="mx-auto mb-4 text-[#78716C]" size={48} />
           <h3 className="text-lg font-semibold text-[#2D2A32] mb-2">
             No se encontraron pacientes
           </h3>

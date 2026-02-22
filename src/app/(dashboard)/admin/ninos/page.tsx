@@ -42,15 +42,22 @@ export default async function AdminChildrenPage() {
     console.error('Error fetching children:', childrenResult.error);
   }
 
-  // Build a map of child_id to professional_ids and professional_names
+interface ChildProfessional {
+  child_id: string;
+  professional_id: string;
+  profiles?: { full_name: string } | { full_name: string }[] | null;
+}
+
   const childProfsMap = new Map<string, { ids: string[]; names: string[] }>();
   for (const cp of childrenProfs) {
     const existing = childProfsMap.get(cp.child_id) || { ids: [], names: [] };
     if (cp.professional_id && !existing.ids.includes(cp.professional_id)) {
       existing.ids.push(cp.professional_id);
     }
-    if ((cp as any).profiles?.full_name && !existing.names.includes((cp as any).profiles.full_name)) {
-      existing.names.push((cp as any).profiles.full_name);
+    const profiles = cp.profiles as { full_name: string } | { full_name: string }[] | null | undefined;
+    const fullName = Array.isArray(profiles) ? profiles[0]?.full_name : profiles?.full_name;
+    if (fullName && !existing.names.includes(fullName)) {
+      existing.names.push(fullName);
     }
     childProfsMap.set(cp.child_id, existing);
   }

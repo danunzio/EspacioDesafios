@@ -56,6 +56,8 @@ export interface ModuleBreakdown {
   sessionCount: number;
   rate: number;
   amount: number;
+  commissionPercentage?: number;
+  professionalAmount?: number;
 }
 
 export interface Liquidation {
@@ -119,8 +121,8 @@ export async function calculateLiquidation(
       `)
       .eq('professional_id', professionalId)
       .eq('year', year)
-    .eq('month', month)
-    .gt('session_count', 0);
+      .eq('month', month)
+      .gt('session_count', 0);
     // We removed is_confirmed=true to allow professionals to see their estimated earnings
     // before admin confirms them, if the system is designed to show "draft" liquidations.
     // If we want ONLY confirmed, we keep it, but the user wants "impact".
@@ -179,27 +181,7 @@ export async function calculateLiquidation(
       }
     }
 
-    // Build module breakdown
-    const moduleBreakdown: ModuleBreakdown[] = [];
-    let totalSessions = 0;
-    let totalAmount = 0;
-
-    for (const [moduleName, data] of moduleMap.entries()) {
-      const amount = data.count * data.rate;
-      moduleBreakdown.push({
-        moduleName,
-        sessionCount: data.count,
-        rate: data.rate,
-        amount
-      });
-      totalSessions += data.count;
-      totalAmount += amount;
-    }
-
-    // Sort by module name
-    moduleBreakdown.sort((a, b) => a.moduleName.localeCompare(b.moduleName));
-
-    // Get professional commission percentages
+    // Get professional commission percentages FIRST
     const { data: profModules } = await supabase
       .from('professional_modules')
       .select('value_type, commission_percentage')
@@ -212,11 +194,34 @@ export async function calculateLiquidation(
     // For historical compatibility/main percentage, get 'modulos' or first available
     const mainPercentage = profCommMap.get('modulos') || profCommMap.values().next().value || 25;
 
+    // Build module breakdown
+    const moduleBreakdown: ModuleBreakdown[] = [];
+    let totalSessions = 0;
+    let totalAmount = 0;
+
+    for (const [moduleName, data] of moduleMap.entries()) {
+      const amount = data.count * data.rate;
+      const commissionPct = profCommMap.get(moduleName) || 25;
+      const profAmount = amount * (commissionPct / 100);
+      moduleBreakdown.push({
+        moduleName,
+        sessionCount: data.count,
+        rate: data.rate,
+        amount,
+        commissionPercentage: commissionPct,
+        professionalAmount: profAmount
+      });
+      totalSessions += data.count;
+      totalAmount += amount;
+    }
+
+    // Sort by module name
+    moduleBreakdown.sort((a, b) => a.moduleName.localeCompare(b.moduleName));
+
     // Calculate professional amount by applying individual module commissions
     let totalProfessionalAmount = 0;
     moduleBreakdown.forEach(mb => {
-      const comm = profCommMap.get(mb.moduleName) || 25;
-      totalProfessionalAmount += mb.amount * (comm / 100);
+      totalProfessionalAmount += mb.professionalAmount || mb.amount * ((mb.commissionPercentage || 25) / 100);
     });
 
     return {
@@ -228,8 +233,8 @@ export async function calculateLiquidation(
         totalSessions,
         totalAmount,
         professionalPercentage: mainPercentage,
-        professionalAmount: totalProfessionalAmount,
-        clinicAmount: totalAmount - totalProfessionalAmount,
+        professionalAmount: totalAmount - totalProfessionalAmount,
+        clinicAmount: totalProfessionalAmount,
         moduleBreakdown
       }
     };

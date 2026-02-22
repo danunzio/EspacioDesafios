@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useConfirm } from '@/components/ui/confirm-modal';
 import { AddChildModal } from '@/components/modals/add-child-modal';
 import { EditChildModal } from '@/components/modals/edit-child-modal';
 import {
@@ -83,6 +84,7 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
   const [allProfessionals, setAllProfessionals] = useState<Professional[]>(professionals);
 
+  const confirm = useConfirm();
   const supabase = createClient();
 
   // Fetch children with their professionals
@@ -154,8 +156,16 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
     });
   }, [children, searchQuery, selectedProfessional]);
 
-  const handleDelete = (childId: string) => {
-    if (confirm('¿Estás seguro de eliminar este paciente?')) {
+  const handleDelete = async (childId: string, childName: string) => {
+    const confirmed = await confirm({
+      title: 'Eliminar paciente',
+      message: `¿Estás seguro de eliminar a ${childName}? Esta acción no se puede deshacer.`,
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+      icon: 'trash',
+    });
+    if (confirmed) {
       setChildren((prev) => prev.filter((c) => c.id !== childId));
     }
   };
@@ -200,7 +210,7 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
         <div className="flex flex-col gap-2">
           <div className="flex-1 relative">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A94A0]"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#78716C]"
               size={20}
             />
             <input
@@ -212,7 +222,7 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter size={20} className="text-[#9A94A0] flex-shrink-0" />
+            <Filter size={20} className="text-[#78716C] flex-shrink-0" />
             <select
               value={selectedProfessional}
               onChange={(e) => setSelectedProfessional(e.target.value)}
@@ -235,7 +245,7 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
           {filteredChildren.map((child) => (
             <Card
               key={child.id}
-              className="p-4 hover:shadow-lg transition-shadow cursor-pointer"
+              className="p-4 hover:shadow-lg transition-shadow cursor-pointer relative"
               onClick={() => handleEdit(child)}
             >
               <div className="flex flex-col gap-3">
@@ -260,7 +270,7 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
                           e.stopPropagation()
                           handleEdit(child)
                         }}
-                        className="font-medium transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#A38EC3] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap bg-white border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 active:bg-gray-100 px-2 sm:px-3 py-1.5 text-xs sm:text-sm rounded-xl sm:rounded-[16px]"
+                        className="absolute top-4 right-4"
                       >
                         <Pencil size={16} className="mr-1" />
                         Editar
@@ -298,6 +308,7 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
                             }}
                             className="p-1 hover:bg-green-50 rounded-full transition-colors"
                             title="Enviar WhatsApp"
+                            aria-label="Enviar mensaje por WhatsApp"
                           >
                             <WhatsAppIcon size={16} />
                           </button>
@@ -322,7 +333,7 @@ export function AdminChildrenClient({ initialChildren, professionals }: AdminChi
         </div>
       ) : (
         <Card className="text-center py-12">
-          <Baby className="mx-auto mb-4 text-[#9A94A0]" size={48} />
+          <Baby className="mx-auto mb-4 text-[#78716C]" size={48} />
           <h3 className="text-lg font-semibold text-[#2D2A32] mb-2">
             No se encontraron pacientes
           </h3>

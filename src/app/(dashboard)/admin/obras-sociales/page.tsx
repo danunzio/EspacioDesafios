@@ -1,12 +1,13 @@
- 'use client';
- 
- import { useEffect, useState, useCallback } from 'react';
- import { Card } from '@/components/ui/card';
- import { Button } from '@/components/ui/button';
- import { Input } from '@/components/ui/input';
- import { Modal } from '@/components/ui/modal';
- import { createClient } from '@/lib/supabase/client';
- import { MoreVertical, Edit, Trash, Power } from 'lucide-react';
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Modal } from '@/components/ui/modal';
+import { useConfirm } from '@/components/ui/confirm-modal';
+import { createClient } from '@/lib/supabase/client';
+import { MoreVertical, Edit, Trash, Power } from 'lucide-react';
  
  interface HealthInsurance {
    id: string;
@@ -14,8 +15,9 @@
    is_active: boolean;
  }
  
- export default function ObrasSocialesPage() {
-   const [healthInsurances, setHealthInsurances] = useState<HealthInsurance[]>([]);
+export default function ObrasSocialesPage() {
+  const confirm = useConfirm();
+  const [healthInsurances, setHealthInsurances] = useState<HealthInsurance[]>([]);
    const [newInsuranceName, setNewInsuranceName] = useState('');
    const [loading, setLoading] = useState(false);
    const [error, setError] = useState<string | null>(null);
@@ -194,15 +196,18 @@
      }
    };
  
-   const handleDeleteInsurance = async (id: string) => {
-     const confirmDelete = window.confirm(
-       '¿Estás seguro de eliminar esta obra social? Los pacientes existentes conservarán el texto actual.'
-     );
-     if (!confirmDelete) {
-       return;
-     }
- 
-     setLoading(true);
+  const handleDeleteInsurance = async (id: string) => {
+    const confirmed = await confirm({
+      title: 'Eliminar obra social',
+      message: '¿Estás seguro de eliminar esta obra social? Los pacientes existentes conservarán el texto actual.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+      icon: 'trash',
+    });
+    if (!confirmed) return;
+
+    setLoading(true);
      setError(null);
      setSuccess(null);
  
@@ -293,7 +298,7 @@
                            {insurance.name}
                          </span>
                          {!insurance.is_active && (
-                           <span className="text-xs text-[#9A94A0]">
+                           <span className="text-xs text-[#78716C]">
                              Inactiva
                            </span>
                          )}

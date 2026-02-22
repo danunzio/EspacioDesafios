@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useConfirm } from '@/components/ui/confirm-modal';
 import {
   ChevronLeft,
   User,
@@ -56,6 +57,7 @@ interface Professional {
   role: string;
   is_active: boolean;
   specialization: string | null;
+  specialty?: string | null;
   license_number: string | null;
   password?: string | null;
   created_at: string;
@@ -95,7 +97,7 @@ interface Liquidation {
 
 interface ProfessionalDetailClientProps {
   professional: Professional;
-  children: Child[];
+  assignedChildren: Child[];
   modules: ProfessionalModule[];
   liquidations: Liquidation[];
 }
@@ -123,11 +125,12 @@ const valueTypeLabels: Record<string, string> = {
 
 export function ProfessionalDetailClient({
   professional,
-  children,
+  assignedChildren: children,
   modules: initialModules,
   liquidations
 }: ProfessionalDetailClientProps) {
   const router = useRouter();
+  const confirm = useConfirm();
   const supabase = createClient();
   const [modules, setModules] = useState<ProfessionalModule[]>(initialModules);
   const [isAddingModule, setIsAddingModule] = useState(false);
@@ -139,7 +142,7 @@ export function ProfessionalDetailClient({
   const [success, setSuccess] = useState<string | null>(null);
   const [editingChildModules, setEditingChildModules] = useState<string | null>(null);
   const [childModules, setChildModules] = useState<Record<string, string[]>>({});
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(true);
 
   const activeChildren = children.filter(c => c.is_active);
   const inactiveChildren = children.filter(c => !c.is_active);
@@ -206,7 +209,15 @@ export function ProfessionalDetailClient({
   };
 
   const handleDeleteModule = async (moduleId: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este módulo?')) return;
+    const confirmed = await confirm({
+      title: 'Eliminar módulo',
+      message: '¿Estás seguro de que deseas eliminar este módulo?',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+      icon: 'trash',
+    });
+    if (!confirmed) return;
 
     setLoading(true);
     const result = await deleteProfessionalModule(moduleId);
@@ -268,7 +279,7 @@ export function ProfessionalDetailClient({
         <div>
           <h2 className="text-2xl font-bold text-[#2D2A32]">{professional.full_name}</h2>
           <p className="text-[#6B6570] mt-1">
-            {professional.specialization || 'Sin especialidad'}
+            {professional.specialization || professional.specialty || 'Sin especialidad'}
           </p>
         </div>
         <Badge
@@ -341,7 +352,7 @@ export function ProfessionalDetailClient({
                 {professional.password && (
                   <button
                     onClick={() => setShowPassword(!showPassword)}
-                    className="p-1 hover:bg-gray-100 rounded-lg transition-colors text-[#9A94A0]"
+                    className="p-1 hover:bg-gray-100 rounded-lg transition-colors text-[#78716C]"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -412,7 +423,7 @@ export function ProfessionalDetailClient({
                   max="100"
                   step="0.01"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9A94A0]">%</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#78716C]">%</span>
               </div>
             </div>
             <div className="flex gap-2 mt-3">
@@ -486,7 +497,7 @@ export function ProfessionalDetailClient({
                              max="100"
                              step="0.01"
                            />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#9A94A0] text-xs">%</span>
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[#78716C] text-xs">%</span>
                         </div>
                         <button
                           onClick={() => handleUpdateModule(module.id)}
@@ -521,6 +532,7 @@ export function ProfessionalDetailClient({
                             }}
                             className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
                             title="Editar"
+                            aria-label="Editar porcentaje de comisión"
                           >
                             <Edit3 size={16} />
                           </button>
@@ -531,6 +543,7 @@ export function ProfessionalDetailClient({
                               : 'hover:bg-green-50 text-green-600'
                               }`}
                             title={module.is_active ? 'Desactivar' : 'Activar'}
+                            aria-label={module.is_active ? 'Desactivar módulo' : 'Activar módulo'}
                           >
                             {module.is_active ? <X size={16} /> : <CheckCircle size={16} />}
                           </button>
@@ -538,6 +551,7 @@ export function ProfessionalDetailClient({
                             onClick={() => handleDeleteModule(module.id)}
                             className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
                             title="Eliminar"
+                            aria-label="Eliminar módulo"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -646,14 +660,15 @@ export function ProfessionalDetailClient({
                                 }
                                 setEditingChildModules(null);
                                 setSuccess('Módulos actualizados correctamente');
-                              } catch (err: any) {
+                              } catch (err: unknown) {
                                 console.error('Full error:', err);
-                                setError('Error: ' + (err?.message || JSON.stringify(err)));
+                                setError('Error: ' + (err instanceof Error ? err.message : JSON.stringify(err)));
                               }
                               setLoading(false);
                             }}
                             className="p-1.5 hover:bg-green-50 text-green-600 rounded"
                             title="Guardar"
+                            aria-label="Guardar cambios de módulos"
                           >
                             <CheckCircle size={16} />
                           </button>
@@ -661,6 +676,7 @@ export function ProfessionalDetailClient({
                             onClick={() => setEditingChildModules(null)}
                             className="p-1.5 hover:bg-red-50 text-red-600 rounded"
                             title="Cancelar"
+                            aria-label="Cancelar edición de módulos"
                           >
                             <X size={16} />
                           </button>
@@ -688,10 +704,11 @@ export function ProfessionalDetailClient({
                             }}
                             className="p-1.5 hover:bg-blue-50 text-blue-600 rounded"
                             title="Editar módulos"
+                            aria-label="Editar módulos del paciente"
                           >
                             <Settings size={16} />
                           </button>
-                          <ChevronLeft className="rotate-180 text-[#9A94A0]" size={20} />
+                          <ChevronLeft className="rotate-180 text-[#78716C]" size={20} />
                         </>
                       )}
                     </div>

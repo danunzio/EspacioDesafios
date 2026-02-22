@@ -49,6 +49,7 @@ export default function NotificacionesProfesionalPage() {
   }, [supabase]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadNotifications();
   }, [loadNotifications]);
 
@@ -157,7 +158,7 @@ export default function NotificacionesProfesionalPage() {
                       <p className="text-sm text-[#6B6570] mt-1">
                         {notification.message}
                       </p>
-                      <div className="flex items-center gap-1 mt-2 text-xs text-[#9A94A0]">
+                      <div className="flex items-center gap-1 mt-2 text-xs text-[#78716C]">
                         <Clock size={12} />
                         {new Date(notification.created_at).toLocaleString('es-CL')}
                       </div>
@@ -167,6 +168,7 @@ export default function NotificacionesProfesionalPage() {
                         onClick={() => handleMarkAsRead(notification.id)}
                         className="p-2 hover:bg-blue-50 text-blue-600 rounded-full transition-colors flex-shrink-0"
                         title="Marcar como leída"
+                        aria-label="Marcar notificación como leída"
                       >
                         <Check size={18} />
                       </button>
@@ -178,7 +180,7 @@ export default function NotificacionesProfesionalPage() {
           ))
         ) : (
           <Card className="p-12 text-center">
-            <Bell size={48} className="mx-auto mb-4 text-[#9A94A0] opacity-50" />
+            <Bell size={48} className="mx-auto mb-4 text-[#78716C] opacity-50" />
             <h3 className="text-lg font-semibold text-[#2D2A32] mb-2">
               No tienes notificaciones
             </h3>

@@ -4,6 +4,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useConfirm } from '@/components/ui/confirm-modal';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2, CheckCircle, AlertCircle, Eye, EyeOff, Send, Trash2 } from 'lucide-react';
 
@@ -56,6 +57,7 @@ export function EditProfessionalModal({ isOpen, onClose, onSuccess, professional
   const [sendEmailNotification, setSendEmailNotification] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  const confirm = useConfirm();
   const supabase = createClient();
 
   useEffect(() => {
@@ -180,8 +182,16 @@ export function EditProfessionalModal({ isOpen, onClose, onSuccess, professional
 
   const handleDeactivate = async () => {
     if (!professional) return;
-    const confirmMsg = `¿Deseas desactivar al profesional ${professional.full_name}? Esta acción evita que se le asignen nuevos pacientes.`;
-    if (!confirm(confirmMsg)) return;
+    
+    const confirmed = await confirm({
+      title: 'Desactivar profesional',
+      message: `¿Deseas desactivar al profesional ${professional.full_name}? Esta acción evita que se le asignen nuevos pacientes.`,
+      confirmText: 'Desactivar',
+      cancelText: 'Cancelar',
+      variant: 'warning',
+      icon: 'warning',
+    });
+    if (!confirmed) return;
 
     setDeleting(true);
     setErrors({});
@@ -204,7 +214,11 @@ export function EditProfessionalModal({ isOpen, onClose, onSuccess, professional
       const directChildren = directResult.data || [];
       const relationChildIds = relationResult.data?.map(r => r.child_id) || [];
 
-      let relationChildren: any[] = [];
+interface ChildIdResult {
+  id: string;
+}
+
+      let relationChildren: ChildIdResult[] = [];
       if (relationChildIds.length > 0) {
         const relationResult2 = await supabase
           .from('children')

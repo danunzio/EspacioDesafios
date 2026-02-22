@@ -49,6 +49,7 @@ export function InstallPrompt({ className }: InstallPromptProps) {
     if (typeof window === 'undefined') return
     
     const device = detectDevice()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDeviceType(device)
     
     if (isStandalone()) return

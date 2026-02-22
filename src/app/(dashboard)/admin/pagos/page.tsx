@@ -1,10 +1,11 @@
  'use client';
  
- import { useEffect, useMemo, useState } from 'react';
- import { Card } from '@/components/ui/card';
- import { Button } from '@/components/ui/button';
- import { Badge } from '@/components/ui/badge';
- import { MONTH_NAMES } from '@/types';
+import { useEffect, useMemo, useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { SkeletonList } from '@/components/ui/skeleton';
+import { MONTH_NAMES } from '@/types';
  import { formatCurrency } from '@/lib/utils/calculations';
  import { getAllPaymentsToClinic, reviewPaymentToClinic, type PaymentToClinic } from '@/lib/actions/payments';
  import { ChevronLeft, ChevronRight, Wallet, CheckCircle, XCircle } from 'lucide-react';
@@ -25,10 +26,10 @@
    const loadPayments = async () => {
      setLoading(true);
      setError(null);
-     const result = await getAllPaymentsToClinic(selectedYear, selectedMonth);
-     if (result.success && result.data) {
-       setPayments(result.data as any);
-     } else {
+      const result = await getAllPaymentsToClinic(selectedYear, selectedMonth);
+      if (result.success && result.data) {
+        setPayments(result.data);
+      } else {
        setError(result.error || 'Error al cargar pagos');
      }
      setLoading(false);
@@ -137,56 +138,58 @@
            </div>
          )}
  
-         {loading ? (
-           <div className="p-8 text-center text-[#6B6570]">Cargando pagos...</div>
-         ) : payments.length === 0 ? (
+          {loading ? (
+            <SkeletonList count={4} />
+          ) : payments.length === 0 ? (
            <div className="p-8 text-center text-[#6B6570]">No hay pagos registrados en este período</div>
          ) : (
            <div className="space-y-3">
              {payments.map((p) => (
-               <div key={p.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                 <div>
-                   <p className="font-medium text-[#2D2A32]">
-                     {p.professional?.full_name || 'Profesional'} • {formatCurrency(p.amount)}
-                   </p>
-                   <p className="text-xs text-[#6B6570]">
-                     {new Date(p.payment_date).toLocaleDateString('es-CL')} • {p.payment_type === 'efectivo' ? 'Efectivo' : 'Transferencia'}
-                   </p>
-                   {p.notes && <p className="text-xs text-[#9A94A0] mt-1">{p.notes}</p>}
-                 </div>
- 
-                 <div className="flex items-center gap-2">
-                  <Badge variant={
-                     p.verification_status === 'approved'
-                       ? 'success'
-                       : p.verification_status === 'rejected'
-                         ? 'error'
-                         : 'warning'
-                   }>
-                     {p.verification_status === 'approved'
-                       ? 'Verificado'
-                       : p.verification_status === 'rejected'
-                         ? 'Rechazado'
-                         : 'Pendiente'}
-                   </Badge>
-                   <Button
-                     variant="outline"
-                     onClick={() => handleReview(p.id, 'approved')}
-                     disabled={p.verification_status === 'approved'}
-                   >
-                     <CheckCircle size={16} className="mr-2" />
-                     Aprobar
-                   </Button>
-                   <Button
-                     variant="outline"
-                     onClick={() => handleReview(p.id, 'rejected')}
-                     disabled={p.verification_status === 'rejected'}
-                   >
-                     <XCircle size={16} className="mr-2" />
-                     Rechazar
-                   </Button>
-                 </div>
-               </div>
+                <div key={p.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 rounded-xl gap-3">
+                  <div>
+                    <p className="font-medium text-[#2D2A32]">
+                      {p.professional?.full_name || 'Profesional'} • {formatCurrency(p.amount)}
+                    </p>
+                    <p className="text-xs text-[#6B6570]">
+                      {new Date(p.payment_date).toLocaleDateString('es-CL')} • {p.payment_type === 'efectivo' ? 'Efectivo' : 'Transferencia'}
+                    </p>
+                    {p.notes && <p className="text-xs text-[#78716C] mt-1">{p.notes}</p>}
+                  </div>
+
+                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                   <Badge variant={
+                      p.verification_status === 'approved'
+                        ? 'success'
+                        : p.verification_status === 'rejected'
+                          ? 'error'
+                          : 'warning'
+                    }>
+                      {p.verification_status === 'approved'
+                        ? 'Verificado'
+                        : p.verification_status === 'rejected'
+                          ? 'Rechazado'
+                          : 'Pendiente'}
+                    </Badge>
+                    <Button
+                      variant="outline"
+                     size="sm"
+                      onClick={() => handleReview(p.id, 'approved')}
+                      disabled={p.verification_status === 'approved'}
+                    >
+                      <CheckCircle size={16} className="mr-2" />
+                      Aprobar
+                    </Button>
+                    <Button
+                      variant="outline"
+                     size="sm"
+                      onClick={() => handleReview(p.id, 'rejected')}
+                      disabled={p.verification_status === 'rejected'}
+                    >
+                      <XCircle size={16} className="mr-2" />
+                      Rechazar
+                    </Button>
+                  </div>
+                </div>
              ))}
  
              <div className="pt-3 border-t border-gray-200">

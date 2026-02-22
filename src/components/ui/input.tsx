@@ -26,7 +26,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {leftIcon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A94A0] pointer-events-none">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#78716C] pointer-events-none">
               {leftIcon}
             </div>
           )}
@@ -38,12 +38,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               'w-full px-4 py-3 rounded-xl',
               'border-2 border-[#E8E5F0]',
               'text-sm sm:text-base text-[#2D2A32]',
-              'placeholder:text-[#9A94A0]',
+              'placeholder:text-[#78716C]',
               'bg-white',
               'transition-all duration-200',
               'focus:outline-none focus:border-[#A38EC3] focus:ring-2 focus:ring-[#A38EC3]/20',
               'hover:border-[#B8A5D3]',
-              'disabled:bg-[#FAFAFF] disabled:text-[#9A94A0] disabled:cursor-not-allowed disabled:border-[#E8E5F0]',
+              'disabled:bg-[#FAFAFF] disabled:text-[#78716C] disabled:cursor-not-allowed disabled:border-[#E8E5F0]',
               'min-h-[44px]',
               error && 'border-red-500 focus:border-red-500 focus:ring-red-500/20',
               leftIcon && 'pl-10',
@@ -53,7 +53,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {rightIcon && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9A94A0]">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#78716C]">
               {rightIcon}
             </div>
           )}
@@ -62,7 +62,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <p className="mt-1.5 text-sm text-red-500">{error}</p>
         )}
         {hint && !error && (
-          <p className="mt-1.5 text-sm text-[#9A94A0]">{hint}</p>
+          <p className="mt-1.5 text-sm text-[#78716C]">{hint}</p>
         )}
       </div>
     )

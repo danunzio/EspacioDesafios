@@ -45,7 +45,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
               'transition-all duration-200',
               'focus:outline-none focus:border-[#A38EC3] focus:ring-2 focus:ring-[#A38EC3]/20',
               'hover:border-[#B8A5D3]',
-              'disabled:bg-[#FAFAFF] disabled:text-[#9A94A0] disabled:cursor-not-allowed disabled:border-[#E8E5F0]',
+              'disabled:bg-[#FAFAFF] disabled:text-[#78716C] disabled:cursor-not-allowed disabled:border-[#E8E5F0]',
               'min-h-[44px]',
               error && 'border-red-500 focus:border-red-500 focus:ring-red-500/20',
               className
@@ -66,7 +66,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
               </option>
             ))}
           </select>
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9A94A0]">
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#78716C]">
             <ChevronDown size={18} />
           </div>
         </div>
@@ -74,7 +74,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           <p className="mt-1.5 text-sm text-red-500">{error}</p>
         )}
         {hint && !error && (
-          <p className="mt-1.5 text-sm text-[#9A94A0]">{hint}</p>
+          <p className="mt-1.5 text-sm text-[#78716C]">{hint}</p>
         )}
       </div>
     )
@@ -95,7 +95,7 @@ export function SelectWithIcon({
   return (
     <div className="relative">
       {icon && (
-        <div className="absolute left-3 top-[34px] pointer-events-none text-[#9A94A0] z-dropdown">
+        <div className="absolute left-3 top-[34px] pointer-events-none text-[#78716C] z-dropdown">
           {icon}
         </div>
       )}

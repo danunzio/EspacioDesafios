@@ -2,21 +2,20 @@
  
  import { useRouter } from 'next/navigation';
  import { Card } from '@/components/ui/card';
- import {
-   Settings,
-   DollarSign,
-   TrendingDown,
-   BarChart3,
-   ChevronRight,
-   FileText,
-   Briefcase,
-   Heart,
-   Clock,
-   Zap,
-   Flame,
-   Droplets,
-   Wallet
- } from 'lucide-react';
+import {
+  Settings,
+  TrendingDown,
+  BarChart3,
+  ChevronRight,
+  FileText,
+  Briefcase,
+  Heart,
+  Clock,
+  Zap,
+  Flame,
+  Droplets,
+  Wallet
+} from 'lucide-react';
  
 const menuItems = [
   {
@@ -48,14 +47,6 @@ const menuItems = [
     description: 'Reportes visuales de facturación y volumen de sesiones',
     href: '/admin/estadisticas',
     icon: BarChart3,
-    color: '#8ED9B8',
-    subIcons: []
-  },
-  {
-    title: 'Liquidaciones',
-    description: 'Calcula y gestiona las liquidaciones mensuales',
-    href: '/admin/liquidaciones',
-    icon: DollarSign,
     color: '#8ED9B8',
     subIcons: []
   },
@@ -113,14 +104,14 @@ const menuItems = [
                           key={idx}
                           className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center"
                         >
-                          <SubIcon size={14} className="text-[#9A94A0]" />
+                          <SubIcon size={14} className="text-[#78716C]" />
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
 
-                <ChevronRight className="text-[#9A94A0] flex-shrink-0" size={24} />
+                <ChevronRight className="text-[#78716C] flex-shrink-0" size={24} />
               </div>
             </Card>
           );

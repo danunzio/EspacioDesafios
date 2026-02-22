@@ -50,7 +50,24 @@ export default async function ProfessionalDetailPage({ params }: ProfessionalDet
     }
   }
 
-  let children: any[] = directResult.data || [];
+interface ChildWithModules {
+  id: string;
+  full_name: string;
+  birth_date: string | null;
+  guardian_name: string;
+  guardian_phone: string | null;
+  health_insurance: string | null;
+  is_active: boolean;
+  modules: string[];
+  [key: string]: unknown;
+}
+
+interface PostgrestError {
+  message: string;
+  code?: string;
+}
+
+  let children: ChildWithModules[] = directResult.data || [];
 
   if (relationResult.data && relationResult.data.length > 0) {
     const relationChildIds = [...new Set(relationResult.data.map(r => r.child_id))];
@@ -61,7 +78,7 @@ export default async function ProfessionalDetailPage({ params }: ProfessionalDet
       .order('full_name');
     
     if (relationChildrenResult.data) {
-      const map = new Map<string, any>();
+      const map = new Map<string, ChildWithModules>();
       for (const child of [...children, ...relationChildrenResult.data]) {
         if (!map.has(child.id)) {
           const modules = childModulesMap.get(child.id) || VALUE_TYPES;
@@ -89,8 +106,8 @@ export default async function ProfessionalDetailPage({ params }: ProfessionalDet
     .eq('professional_id', id)
     .order('value_type');
 
-  if (modulesError && (modulesError as any)?.message) {
-    console.error('Error fetching modules:', (modulesError as any).message);
+  if (modulesError && (modulesError as PostgrestError)?.message) {
+    console.error('Error fetching modules:', (modulesError as PostgrestError).message);
   }
 
   // Fetch liquidation history
@@ -109,7 +126,7 @@ export default async function ProfessionalDetailPage({ params }: ProfessionalDet
   return (
     <ProfessionalDetailClient
       professional={professional}
-      children={children || []}
+      assignedChildren={children}
       modules={modules || []}
       liquidations={liquidations || []}
     />

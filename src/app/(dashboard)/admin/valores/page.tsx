@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { SkeletonTable } from '@/components/ui/skeleton';
+import { useConfirm } from '@/components/ui/confirm-modal';
 import {
   DollarSign,
   Save,
@@ -58,6 +60,7 @@ const valueTypeLabels: Record<ValueType, { label: string; icon: typeof FileText;
 };
 
 export default function AdminValuesPage() {
+  const confirm = useConfirm();
   const [values, setValues] = useState<ValueHistory[]>([]);
   const [selectedType, setSelectedType] = useState<ValueType>('nomenclatura');
   const [year, setYear] = useState(() => new Date().getFullYear());
@@ -80,6 +83,7 @@ export default function AdminValuesPage() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadValues();
   }, [loadValues]);
 
@@ -135,9 +139,16 @@ export default function AdminValuesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este valor?')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Eliminar valor',
+      message: '¿Estás seguro de que deseas eliminar este valor? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+      icon: 'trash',
+    });
+
+    if (!confirmed) return;
 
     setLoading(true);
     const result = await deleteValue(id);
@@ -276,7 +287,7 @@ export default function AdminValuesPage() {
               <p className="text-sm text-[#6B6570]">
                 para {MONTH_NAMES[currentValue.month - 1]} {currentValue.year}
               </p>
-              <p className="text-xs text-[#9A94A0] mt-2">
+              <p className="text-xs text-[#78716C] mt-2">
                 Al guardar, se actualizará este valor
               </p>
             </div>
@@ -327,7 +338,7 @@ export default function AdminValuesPage() {
                   Valor ($)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9A94A0]">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#78716C]">
                     $
                   </span>
                   <input
@@ -424,11 +435,8 @@ export default function AdminValuesPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-[#6B6570]">
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="animate-spin">⏳</span>
-                      Cargando...
-                    </span>
+                  <td colSpan={5} className="py-4">
+                    <SkeletonTable rows={4} cols={5} />
                   </td>
                 </tr>
               ) : getValuesByType(selectedType).length > 0 ? (
@@ -461,6 +469,7 @@ export default function AdminValuesPage() {
                           onClick={() => handleEdit(v)}
                           className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
                           title="Editar"
+                          aria-label="Editar valor"
                         >
                           <Pencil size={16} />
                         </button>
@@ -468,6 +477,7 @@ export default function AdminValuesPage() {
                           onClick={() => handleDelete(v.id)}
                           className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
                           title="Eliminar"
+                          aria-label="Eliminar valor"
                         >
                           <Trash2 size={16} />
                         </button>

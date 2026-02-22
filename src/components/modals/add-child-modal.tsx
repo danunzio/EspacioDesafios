@@ -4,8 +4,10 @@ import { useState, useEffect, FormEvent } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { AccordionSection } from '@/components/ui/accordion-section'
+import { ProgressIndicator } from '@/components/ui/progress-indicator'
 import { createClient } from '@/lib/supabase/client'
-import { Loader2, CheckCircle, AlertCircle, X } from 'lucide-react'
+import { Loader2, CheckCircle, AlertCircle, X, Baby, Users, Stethoscope } from 'lucide-react'
 
 interface Professional {
   id: string
@@ -62,6 +64,16 @@ export function AddChildModal({ isOpen, onClose, onSuccess }: AddChildModalProps
   const [healthInsuranceOptions, setHealthInsuranceOptions] = useState<string[]>([])
 
   const supabase = createClient()
+
+  const steps = [
+    { id: 'patient', label: 'Paciente', completed: !!formData.full_name.trim() },
+    { id: 'guardian', label: 'Responsable', completed: !!formData.guardian_name.trim() || !!formData.guardian_phone.trim() },
+    { id: 'assignment', label: 'Asignación', completed: formData.assigned_professional_ids.length > 0 },
+  ]
+
+  const currentStep = !formData.full_name.trim() ? 'patient' 
+    : !formData.guardian_name.trim() && !formData.guardian_phone.trim() ? 'guardian'
+    : 'assignment'
 
   useEffect(() => {
     if (isOpen) {
@@ -137,7 +149,6 @@ export function AddChildModal({ isOpen, onClose, onSuccess }: AddChildModalProps
     setErrors({})
 
     try {
-      // Insert child with first professional as primary (for backward compatibility)
       const { data: childData, error: childError } = await supabase
         .from('children')
         .insert({
@@ -145,7 +156,7 @@ export function AddChildModal({ isOpen, onClose, onSuccess }: AddChildModalProps
           guardian_name: formData.guardian_name?.trim() || '',
           guardian_phone: formData.guardian_phone?.trim() || '',
           guardian_email: formData.guardian_email?.trim() || null,
-          assigned_professional_id: formData.assigned_professional_ids[0] || null, // Primary professional
+          assigned_professional_id: formData.assigned_professional_ids[0] || null,
           health_insurance: formData.health_insurance === 'Otra'
             ? formData.custom_health_insurance.trim()
             : formData.health_insurance || null,
@@ -156,7 +167,6 @@ export function AddChildModal({ isOpen, onClose, onSuccess }: AddChildModalProps
 
       if (childError) throw childError
 
-      // Insert all professional relationships
       if (formData.assigned_professional_ids.length > 1) {
         const professionalRelations = formData.assigned_professional_ids.map(profId => ({
           child_id: childData.id,
@@ -225,6 +235,8 @@ export function AddChildModal({ isOpen, onClose, onSuccess }: AddChildModalProps
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-3">
+            <ProgressIndicator steps={steps} currentStep={currentStep} className="mb-4" />
+
             {errors.general && (
               <div className="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs">
                 <AlertCircle size={14} />
@@ -232,144 +244,145 @@ export function AddChildModal({ isOpen, onClose, onSuccess }: AddChildModalProps
               </div>
             )}
 
-            <div className="space-y-2">
-              <h3 className="text-xs font-semibold text-[#A38EC3] uppercase tracking-wide">
-                Información del Paciente
-              </h3>
-
-              <Input
-                label="Nombre completo *"
-                value={formData.full_name}
-                onChange={(e) => handleChange('full_name', e.target.value)}
-                placeholder="Nombre del paciente"
-                required
-                error={errors.full_name}
-              />
-
-
-
-              <div className="w-full">
-                <label htmlFor="child-health-insurance" className="block text-xs font-medium text-gray-700 mb-1">
-                  Obra Social
-                </label>
-                <select
-                  id="child-health-insurance"
-                  value={formData.health_insurance}
-                  onChange={(e) => handleChange('health_insurance', e.target.value)}
-                  className={`w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-300 focus:border-[#A38EC3] focus:ring-0 focus:outline-none ${errors.health_insurance ? 'border-red-500' : ''}`}
-                  required={false}
-                >
-                  <option value="">Seleccionar...</option>
-                  {healthInsuranceOptions.map((option) => (
-                    <option key={option} value={option}>{option}</option>
-                  ))}
-                </select>
-                {errors.health_insurance && (
-                  <p className="mt-0.5 text-xs text-red-500">{errors.health_insurance}</p>
-                )}
-              </div>
-
-              {formData.health_insurance === 'Otra' && (
+            <AccordionSection
+              title="Información del Paciente"
+              icon={<Baby size={12} />}
+              defaultOpen={true}
+              completed={!!formData.full_name.trim()}
+              required
+            >
+              <div className="space-y-2">
                 <Input
-                  label="Nombre de la obra social *"
-                  value={formData.custom_health_insurance}
-                  onChange={(e) => handleChange('custom_health_insurance', e.target.value)}
-                  placeholder="Ingrese el nombre de la obra social"
-                  required={false}
-                  error={errors.custom_health_insurance}
+                  label="Nombre completo *"
+                  value={formData.full_name}
+                  onChange={(e) => handleChange('full_name', e.target.value)}
+                  placeholder="Nombre del paciente"
+                  required
+                  error={errors.full_name}
                 />
-              )}
-            </div>
 
-            <div className="space-y-2 pt-2 border-t border-gray-100">
-              <h3 className="text-xs font-semibold text-[#A38EC3] uppercase tracking-wide">
-                Responsable
-              </h3>
-
-              <Input
-                label="Nombre"
-                value={formData.guardian_name}
-                onChange={(e) => handleChange('guardian_name', e.target.value)}
-                placeholder="Nombre del responsable"
-                error={errors.guardian_name}
-              />
-
-              <Input
-                label="Teléfono"
-                type="tel"
-                value={formData.guardian_phone}
-                onChange={(e) => handleChange('guardian_phone', e.target.value)}
-                placeholder="+56 9 1234 5678"
-                error={errors.guardian_phone}
-              />
-
-              <Input
-                label="Email"
-                type="email"
-                value={formData.guardian_email}
-                onChange={(e) => handleChange('guardian_email', e.target.value)}
-                placeholder="email@ejemplo.com"
-                error={errors.guardian_email}
-              />
-            </div>
-
-            <div className="space-y-2 pt-2 border-t border-gray-100">
-              <h3 className="text-xs font-semibold text-[#A38EC3] uppercase tracking-wide">
-                Asignación de Profesionales
-              </h3>
-
-              {selectedProfessionals.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {selectedProfessionals.map(prof => (
-                    <span
-                      key={prof.id}
-                      className="inline-flex items-center gap-1 px-2 py-1 bg-[#A38EC3]/10 text-[#A38EC3] rounded-full text-xs"
-                    >
-                      {prof.full_name}
-                      <button
-                        type="button"
-                        onClick={() => toggleProfessional(prof.id)}
-                        className="hover:bg-[#A38EC3]/20 rounded-full p-0.5"
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <div className="w-full">
-                <label htmlFor="add-professional-select" className="block text-xs font-medium text-gray-700 mb-1">
-                  Seleccionar profesionales
-                </label>
-                <select
-                  id="add-professional-select"
-                  value=""
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      toggleProfessional(e.target.value)
-                      e.target.value = ''
-                    }
-                  }}
-                  className={`w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-300 focus:border-[#A38EC3] focus:ring-0 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed ${errors.assigned_professional_ids ? 'border-red-500' : ''}`}
-                  disabled={fetchLoading}
-                >
-                  <option value="">
-                    {fetchLoading ? 'Cargando...' : 'Agregar profesional...'}
-                  </option>
-                  {professionals
-                    .filter(p => !formData.assigned_professional_ids.includes(p.id))
-                    .map((professional) => (
-                      <option key={professional.id} value={professional.id}>
-                        {professional.full_name}
-                      </option>
+                <div className="w-full">
+                  <label htmlFor="child-health-insurance" className="block text-xs font-medium text-gray-700 mb-1">
+                    Obra Social
+                  </label>
+                  <select
+                    id="child-health-insurance"
+                    value={formData.health_insurance}
+                    onChange={(e) => handleChange('health_insurance', e.target.value)}
+                    className={`w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-300 focus:border-[#A38EC3] focus:ring-0 focus:outline-none ${errors.health_insurance ? 'border-red-500' : ''}`}
+                  >
+                    <option value="">Seleccionar...</option>
+                    {healthInsuranceOptions.map((option) => (
+                      <option key={option} value={option}>{option}</option>
                     ))}
-                </select>
-                {errors.assigned_professional_ids && (
-                  <p className="mt-0.5 text-xs text-red-500">{errors.assigned_professional_ids}</p>
+                  </select>
+                </div>
+
+                {formData.health_insurance === 'Otra' && (
+                  <Input
+                    label="Nombre de la obra social *"
+                    value={formData.custom_health_insurance}
+                    onChange={(e) => handleChange('custom_health_insurance', e.target.value)}
+                    placeholder="Ingrese el nombre de la obra social"
+                    error={errors.custom_health_insurance}
+                  />
                 )}
               </div>
-            </div>
+            </AccordionSection>
+
+            <AccordionSection
+              title="Datos del Responsable"
+              icon={<Users size={12} />}
+              defaultOpen={false}
+              completed={!!formData.guardian_name.trim() || !!formData.guardian_phone.trim()}
+            >
+              <div className="space-y-2">
+                <Input
+                  label="Nombre"
+                  value={formData.guardian_name}
+                  onChange={(e) => handleChange('guardian_name', e.target.value)}
+                  placeholder="Nombre del responsable"
+                  error={errors.guardian_name}
+                />
+
+                <Input
+                  label="Teléfono"
+                  type="tel"
+                  value={formData.guardian_phone}
+                  onChange={(e) => handleChange('guardian_phone', e.target.value)}
+                  placeholder="+56 9 1234 5678"
+                  error={errors.guardian_phone}
+                />
+
+                <Input
+                  label="Email"
+                  type="email"
+                  value={formData.guardian_email}
+                  onChange={(e) => handleChange('guardian_email', e.target.value)}
+                  placeholder="email@ejemplo.com"
+                  error={errors.guardian_email}
+                />
+              </div>
+            </AccordionSection>
+
+            <AccordionSection
+              title="Asignación de Profesionales"
+              icon={<Stethoscope size={12} />}
+              defaultOpen={false}
+              completed={formData.assigned_professional_ids.length > 0}
+            >
+              <div className="space-y-2">
+                {selectedProfessionals.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {selectedProfessionals.map(prof => (
+                      <span
+                        key={prof.id}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-[#A38EC3]/10 text-[#A38EC3] rounded-full text-xs"
+                      >
+                        {prof.full_name}
+                        <button
+                          type="button"
+                          onClick={() => toggleProfessional(prof.id)}
+                          className="hover:bg-[#A38EC3]/20 rounded-full p-0.5"
+                          aria-label={`Quitar ${prof.full_name}`}
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="w-full">
+                  <label htmlFor="add-professional-select" className="block text-xs font-medium text-gray-700 mb-1">
+                    Seleccionar profesionales
+                  </label>
+                  <select
+                    id="add-professional-select"
+                    value=""
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        toggleProfessional(e.target.value)
+                        e.target.value = ''
+                      }
+                    }}
+                    className={`w-full px-3 py-2 text-sm rounded-xl border-2 border-gray-300 focus:border-[#A38EC3] focus:ring-0 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed ${errors.assigned_professional_ids ? 'border-red-500' : ''}`}
+                    disabled={fetchLoading}
+                  >
+                    <option value="">
+                      {fetchLoading ? 'Cargando...' : 'Agregar profesional...'}
+                    </option>
+                    {professionals
+                      .filter(p => !formData.assigned_professional_ids.includes(p.id))
+                      .map((professional) => (
+                        <option key={professional.id} value={professional.id}>
+                          {professional.full_name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+            </AccordionSection>
 
             <div className="flex gap-2 pt-3 sticky bottom-0 bg-white pb-2">
               <Button
